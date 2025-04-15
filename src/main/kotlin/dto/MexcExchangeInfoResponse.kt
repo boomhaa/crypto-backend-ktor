@@ -18,5 +18,4 @@ data class MexcPairInfo(
     val symbol: String,
     val baseAsset: String,
     val quoteAsset: String,
-    val status: String
 )

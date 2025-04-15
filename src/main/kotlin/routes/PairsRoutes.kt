@@ -17,7 +17,12 @@ fun Route.pairsRoutes(pairService: PairSerivces) {
         get("/popular") {
 
             val popularPairs = pairService.getPopularPairs()
-            call.respond(HttpStatusCode.OK, popularPairs)
+            try {
+                call.respond(HttpStatusCode.OK, popularPairs)
+            }catch (e: Exception){
+                call.respond(HttpStatusCode.OK) { "error" to e.message }
+            }
+
 
         }
     }
