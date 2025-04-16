@@ -62,7 +62,8 @@ jobs:
     services:
       postgres:
         image: postgres:15
-        ports: [5432:5432]
+        ports:
+            - "5432:5432"
         env:
           POSTGRES_DB: ${{ secrets.DB_NAME }}
           POSTGRES_USER: ${{ secrets.DB_USER }}
