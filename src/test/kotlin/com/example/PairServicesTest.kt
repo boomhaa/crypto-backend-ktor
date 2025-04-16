@@ -23,7 +23,7 @@ class PairServicesTest {
     }
 
     @Test
-    fun `getAllPairs should return all trading pairs from client`() {
+    fun `getAllPairs should return all trading pairs from repository`() {
         val mockPairs = listOf(
             PairInfo("BTCUSDT", "BTC", "USDT"),
             PairInfo("DOGEUSDT", "DOGE", "USDT")
@@ -46,17 +46,12 @@ class PairServicesTest {
 
         val result = pairServices.getPopularPairs()
 
-        assertEquals(2, result.size)
-        assertTrue(result.any { it.pair == "BTCUSDT" })
-        assertTrue(result.any { it.pair == "ETHUSDT" })
-        assertFalse(result.any { it.pair == "DOGEUSDT" })
         assertEquals(mockPairs, result)
     }
 
     @Test
     fun `getPopularPairs should return empty list when no match`() {
-        val mockPairs = listOf(PairInfo("DOGEUSDT", "DOGE", "USDT"))
-        whenever(mexcClient.getTraidingPairs()).thenReturn(mockPairs)
+        whenever(tradingPairsRepository.findPopular()).thenReturn(emptyList())
 
         val result = pairServices.getPopularPairs()
 
@@ -64,12 +59,10 @@ class PairServicesTest {
     }
 
     @Test
-    fun `getAllPairs should return empty list when client returns empty`() {
-        val mockMexc = mock<MexcClient>()
-        whenever(mockMexc.getTraidingPairs()).thenReturn(emptyList())
+    fun `getAllPairs should return empty list when repository returns empty`() {
+        whenever(tradingPairsRepository.findAll()).thenReturn(emptyList())
 
-        val service = PairServices(mockMexc, tradingPairsRepository)
-        val result = service.getAllPairs()
+        val result = pairServices.getAllPairs()
 
         assertTrue(result.isEmpty())
     }

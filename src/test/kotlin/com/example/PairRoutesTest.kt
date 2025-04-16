@@ -2,7 +2,7 @@ package com.example
 
 import com.example.dto.PairInfo
 import com.example.routes.pairsRoutes
-import com.example.services.PairSerivces
+import com.example.services.PairServices
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
@@ -19,7 +19,7 @@ import kotlin.test.assertTrue
 
 class PairRoutesTest {
 
-    private fun Application.testModule(pairService: PairSerivces) {
+    private fun Application.testModule(pairService: PairServices) {
         install(ContentNegotiation) {
             json(Json { prettyPrint = true })
         }
@@ -30,7 +30,7 @@ class PairRoutesTest {
 
     @Test
     fun `GET pairs should return all pairs`() = testApplication {
-        val pairService = mock(PairSerivces::class.java)
+        val pairService = mock(PairServices::class.java)
         val expectedPairs = listOf(PairInfo("BTCUSDT", "BTC", "USDT", "50000"))
         `when`(pairService.getAllPairs()).thenReturn(expectedPairs)
 
@@ -44,7 +44,7 @@ class PairRoutesTest {
 
     @Test
     fun `GET pairs popular should return only popular pairs`() = testApplication {
-        val pairService = mock(PairSerivces::class.java)
+        val pairService = mock(PairServices::class.java)
         val expectedPopular = listOf(PairInfo("ETHUSDT", "ETH", "USDT", "3000"))
         `when`(pairService.getPopularPairs()).thenReturn(expectedPopular)
 
@@ -63,7 +63,7 @@ class PairRoutesTest {
                 json()
             }
             routing {
-                pairsRoutes(mock(PairSerivces::class.java))
+                pairsRoutes(mock(PairServices::class.java))
             }
         }
 

@@ -1,6 +1,5 @@
 <configuration>
-    <appender name="FILE-ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_DIR}</file>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>logs/archived/app.%d{yyyy-MM-dd}.%i.log</fileNamePattern>

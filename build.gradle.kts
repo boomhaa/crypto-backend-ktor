@@ -38,9 +38,9 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-dao:0.41.1")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.41.1")
     implementation("org.jetbrains.exposed:exposed-java-time:0.41.1")
-    implementation("org.postgresql:postgresql:42.5.4")
+    implementation("org.postgresql:postgresql:42.7.0")
     implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("org.flywaydb:flyway-core:9.16.0")
+    implementation("org.flywaydb:flyway-core:9.21.2")
 
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
@@ -50,6 +50,19 @@ dependencies {
     testImplementation(libs.ktor.server.test.host)
 }
 
+sourceSets {
+    main {
+        resources {
+            srcDirs("src/main/resources")
+        }
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.withType<ProcessResources> {
+    println("Copying resources to: $destinationDir")
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }

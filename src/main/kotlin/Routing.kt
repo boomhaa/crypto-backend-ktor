@@ -20,6 +20,7 @@ fun Application.configureRouting() {
     val mexcClient = MexcClient(httpService)
     val pairServices = PairServices(mexcClient = mexcClient, tradingPairsRepository)
 
+    pairServices.startDataRefreshJob()
     routing {
         route("/api") {
             pairsRoutes(pairServices)

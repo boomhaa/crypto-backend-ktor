@@ -8,15 +8,12 @@ import com.example.services.HttpService
 import kotlinx.serialization.json.Json
 
 class MexcClient(private val httpService: HttpService,
-                 private val dotenv: Dotenv = Dotenv.load()) {
-
-
-
+                 dotenv: Dotenv = Dotenv.load()) {
 
     private val MEXC_API_KEY: String =
         dotenv["MEXC_API_KEY"] ?: throw IllegalStateException("MEXC_API_KEY is not set in .env file")
-    private val MEXC_SECRET_KEY: String =
-        dotenv["MEXC_SECRET_KEY"] ?: throw IllegalStateException("MEXC_SECRET_KEY is not set in .env file")
+    //private val MEXC_SECRET_KEY: String =
+    //    dotenv["MEXC_SECRET_KEY"] ?: throw IllegalStateException("MEXC_SECRET_KEY is not set in .env file")
 
     fun getTraidingPairs(): List<PairInfo> {
 
@@ -41,7 +38,7 @@ class MexcClient(private val httpService: HttpService,
     }
 
 
-    fun getPairsPrice(): Map<String, String> {
+    private fun getPairsPrice(): Map<String, String> {
 
         val url = "${MexcConfig.BASE_URL}${MexcConfig.Endpoints.PRICE}"
         val headers = mapOf("X-MEXC-APIKEY" to MEXC_API_KEY, "Content-Type" to "application/json")

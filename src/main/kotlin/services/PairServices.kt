@@ -21,14 +21,17 @@ class PairServices(
     private var lastUpdateTime: Instant = Instant.MIN
     private val updateInterval = Duration.ofMinutes(5)
 
-    init {
-        startDataRefreshJob()
-    }
 
-    private fun startDataRefreshJob() {
+
+    fun startDataRefreshJob() {
         CoroutineScope(Dispatchers.IO).launch {
-            refreshDataFromExchange()
-            delay(updateInterval.toMillis())
+            try{
+                refreshDataFromExchange()
+                delay(updateInterval.toMillis())
+            }catch (e: Exception){
+                logger.error("Error while updating data: $e")
+            }
+
         }
     }
 
@@ -52,7 +55,7 @@ class PairServices(
     }
 
     fun getAllPairs(): List<PairInfo> {
-        return mexcClient.getTraidingPairs()
+        return tradingPairsRepository.findAll()
     }
 
 }
