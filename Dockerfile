@@ -1,27 +1,17 @@
-# Используем образ с JDK 17
-FROM eclipse-temurin:17-jdk-jammy as builder
+# Используем образ с JDK 17 в качестве базового
+FROM eclipse-temurin:17-jdk-jammy
 
-# Рабочая директория
+# Создаем рабочую директорию
 WORKDIR /app
 
-# Копируем Gradle файлы для кэширования
-COPY gradlew .
-COPY gradle gradle
-COPY build.gradle.kts .
-COPY settings.gradle.kts .
-COPY src src
+# Копируем собранный JAR-файл в контейнер
+COPY crypto-backend-ktor.jar /app/crypto-backend-ktor.jar
 
-# Запускаем сборку проекта с созданием shadow JAR
-RUN chmod +x gradlew && ./gradlew shadowJar
+# Копируем .env файл (если нужно)
+COPY .env /app/.env
 
-# Финальный образ
-FROM eclipse-temurin:17-jre-jammy
-
-WORKDIR /app
-
-# Копируем собранный JAR из builder
-COPY --from=builder /app/build/libs/crypto-backend-ktor.jar .
-COPY .env .
+# Открываем порт, на котором работает приложение
+EXPOSE 8080
 
 # Команда для запуска приложения
-CMD ["java", "-jar", "crypto-backend-ktor.jar"]
+ENTRYPOINT ["java", "-jar", "crypto-backend-ktor.jar"]

@@ -1,78 +1,134 @@
-name: Deploy to Server
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+  pull_request:
 
 jobs:
-  deploy:
+  build:
+    name: 🔧 Build
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
 
-      # Устанавливаем JDK 17
-      - name: Set up JDK 17
+      - name: ☕ Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: 17
           distribution: 'temurin'
 
-      # Устанавливаем Docker и Docker Compose (официальные actions)
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v2
-
-      - name: Set up Docker Compose
-        uses: docker/setup-compose-action@v2
-
-      # Генерируем .env файл из секретов
-      - name: Create .env file
+      - name: 🔨 Build shadowJar
         run: |
-          cat <<EOF > .env
-          DB_HOST=${{ secrets.DB_HOST }}
-          DB_PORT=${{ secrets.DB_PORT }}
-          DB_NAME=${{ secrets.DB_NAME }}
-          DB_USER=${{ secrets.DB_USER }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}
-          MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}
-          SERVER_HOST=${{ secrets.SERVER_HOST }}
-          SERVER_USER=${{ secrets.SERVER_USER }}
-          SSH_PRIVATE_KEY=${{ secrets.SSH_PRIVATE_KEY }}
+          chmod +x ./gradlew
+          ./gradlew clean shadowJar --no-daemon
+      - name: 📦 Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: ktor-app
+          path: build/libs/*.jar
+
+  test:
+    name: 🧪 Test
+    runs-on: ubuntu-latest
+    needs: build
+
+    services:
+      postgres:
+        image: postgres:15
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      MEXC_API_KEY: ${{ secrets.MEXC_API_KEY }}
+      MEXC_SECRET_KEY: ${{ secrets.MEXC_SECRET_KEY }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ☕ Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'temurin'
+
+      - name: 📄 Generate .env for tests
+        run: |
+          echo "MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}" >> .env
+          echo "MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+      - name: 🧪 Run tests
+        run: |
+          chmod +x ./gradlew
+          ./gradlew test --no-daemon
+  deploy:
+    name: 🚀 Deploy to Server
+    runs-on: ubuntu-latest
+    needs: [ build, test ]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ktor-app
+          path: app
+
+      - name: 📂 List downloaded JAR
+        run: ls -la app/
+
+      - name: 🔐 Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+      - name: 📄 Generate .env for deploy
+        run: |
+          echo "MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}" >> .env
+          echo "MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+      - name: 📤 Copy files to server
+        run: |
+          scp -i ~/.ssh/deploy_key app/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/crypto-backend-ktor.jar
+          scp -i ~/.ssh/deploy_key .env ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/.env
+          scp -i ~/.ssh/deploy_key docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/docker-compose.yml
+      - name: 🐳 Create Docker Volume
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "docker volume create postgres_data"
+      - name: 🚀 SSH Deploy
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            cd ~/my-ktor-project
+            echo "🛑 Останавливаем старые контейнеры"
+            docker-compose down
+            echo "🚀 Запускаем новые контейнеры"
+            docker-compose up -d --build
           EOF
-
-      # Собираем JAR
-      - name: Build with Gradle
-        run: ./gradlew shadowJar
-
-      # Собираем Docker образ
-      - name: Build Docker image
-        run: docker compose build
-
-      # Сохраняем образ в artifact
-      - name: Save Docker image
-        run: docker save $(docker compose images | awk 'NR==3 {print $2}') -o image.tar
-      - uses: actions/upload-artifact@v4
-        with:
-          name: docker-image
-          path: image.tar
-
-      # Деплой на сервер
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # Создаем volume для PostgreSQL если его нет
-            docker volume ls -q | grep -q postgres_data || docker volume create postgres_data
-            
-            # Получаем и загружаем образ
-            mkdir -p ~/crypto-backend-ktor
-            cd ~/crypto-backend-ktor
-            docker load -i image.tar
-            
-            # Запускаем приложение
-            docker compose down
-            docker compose up -d

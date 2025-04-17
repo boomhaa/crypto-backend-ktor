@@ -3,30 +3,41 @@ version: '3.8'
 services:
   app:
     build: .
+    image: crypto-backend-ktor
+    container_name: crypto-backend-ktor
+    restart: unless-stopped
     ports:
       - "8080:8080"
-    environment:
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+    env_file:
+      - .env
     depends_on:
       - postgres
-    restart: unless-stopped
+    networks:
+      - crypto-network
 
   postgres:
     image: postgres:15
+    container_name: postgres
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - crypto-network
 
 volumes:
   postgres_data:
     external: true
+
+
+networks:
+  crypto-network:
+    driver: bridge
