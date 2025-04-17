@@ -9,7 +9,7 @@ object TradingPairsTable : Table("trading_pairs") {
     val pair = varchar("pair", 100)
     val baseAsset = varchar("base_asset", 100)
     val quoteAsset = varchar("quote_asset", 100)
-    val price = varchar("price", 100).nullable()
+    val price = decimal("price", 100, 8).nullable()
     val lastUpdated = timestamp("last_updated").default(Instant.now())
 
     override val primaryKey = PrimaryKey(id)

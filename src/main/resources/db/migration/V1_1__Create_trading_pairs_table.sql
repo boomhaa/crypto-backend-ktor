@@ -7,4 +7,4 @@ CREATE TABLE IF NOT EXISTS trading_pairs (
     last_updated TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_trading_pairs_pair ON trading_pairs(pair);
+CREATE INDEX IF NOT EXISTS idx_trading_pairs_pair ON trading_pairs(pair);

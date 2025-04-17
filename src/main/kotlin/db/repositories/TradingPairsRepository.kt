@@ -16,21 +16,21 @@ class TradingPairsRepository {
 
     fun saveAll(pairs: List<PairInfo>) = transaction {
         try {
-            pairs.forEach { pairInfo ->
-                val existingPair = TradingPairsTable.select {
-                    TradingPairsTable.pair eq pairInfo.pair
-                }.singleOrNull()
+            val existingPairs = TradingPairsTable.selectAll().associateBy { it[TradingPairsTable.pair] }
 
+            pairs.forEach { pairInfo ->
+                val existingPair = existingPairs[pairInfo.pair]
                 if (existingPair != null) {
                     TradingPairsTable.update({ TradingPairsTable.pair eq pairInfo.pair }) {
-                        it[price] = pairInfo.price
+                        it[price] = pairInfo.price?.toBigDecimal()
+                        it[lastUpdated] = java.time.Instant.now()
                     }
                 } else {
                     TradingPairsTable.insert {
                         it[pair] = pairInfo.pair
                         it[baseAsset] = pairInfo.baseAsset
                         it[quoteAsset] = pairInfo.quoteAsset
-                        it[price] = pairInfo.price
+                        it[price] = pairInfo.price?.toBigDecimal()
                     }
                 }
             }
@@ -46,7 +46,7 @@ class TradingPairsRepository {
                 pair = row[TradingPairsTable.pair],
                 baseAsset = row[TradingPairsTable.baseAsset],
                 quoteAsset = row[TradingPairsTable.quoteAsset],
-                price = row[TradingPairsTable.price]
+                price = row[TradingPairsTable.price]?.toPlainString()
             )
         }
     }
@@ -59,7 +59,7 @@ class TradingPairsRepository {
                 pair = row[TradingPairsTable.pair],
                 baseAsset = row[TradingPairsTable.baseAsset],
                 quoteAsset = row[TradingPairsTable.quoteAsset],
-                price = row[TradingPairsTable.price]
+                price = row[TradingPairsTable.price]?.toPlainString()
             )
 
         }

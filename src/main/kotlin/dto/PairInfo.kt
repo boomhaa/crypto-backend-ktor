@@ -7,5 +7,6 @@ data class PairInfo(
     val pair: String,
     val baseAsset: String,
     val quoteAsset: String,
-    val price: String? = null
+    val price: String? = null,
+    val lastUpdated: String? = null
 )

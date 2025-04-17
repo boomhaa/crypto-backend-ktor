@@ -80,13 +80,12 @@ class MexcClientTest {
     fun `should throw error if env variables are missing`() {
         val mockHttpService = HttpService()
 
-        // Создаем мок Dotenv
         val mockDotenv = mock(Dotenv::class.java)
         `when`(mockDotenv["MEXC_API_KEY"]).thenReturn(null)
         `when`(mockDotenv["MEXC_SECRET_KEY"]).thenReturn(null)
 
-        // Передаем мок в конструктор
         assertThrows<IllegalStateException> {
             MexcClient(mockHttpService, mockDotenv)
-        }    }
+        }
+    }
 }
