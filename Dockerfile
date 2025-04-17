@@ -1,12 +1,9 @@
-FROM gradle:8.5-jdk17 AS build
+FROM openjdk:17-jdk-slim
 
 WORKDIR /app
-COPY . .
-RUN gradle clean shadowJar --no-daemon
 
-FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
-COPY --from=build /app/build/libs/*.jar crypto-backend-ktor.jar
-COPY .env .env
+COPY build/libs/crypto-backend-ktor.jar crypto-backend-ktor.jar
+
 EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "crypto-backend-ktor.jar"]

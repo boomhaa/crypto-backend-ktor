@@ -66,3 +66,7 @@ tasks.withType<ProcessResources> {
     println("Copying resources to: $destinationDir")
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
+
+tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
+    archiveFileName.set("crypto-backend-ktor.jar")
+}
