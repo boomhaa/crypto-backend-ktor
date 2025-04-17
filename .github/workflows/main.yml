@@ -83,55 +83,50 @@ jobs:
   deploy:
     name: 🚀 Deploy to Server
     runs-on: ubuntu-latest
-    needs: test
+    needs: [build, test]
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: ⬇️ Download artifact
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Download JAR
         uses: actions/download-artifact@v4
         with:
           name: ktor-app
-          path: build/libs/
+          path: .
 
       - name: 🔐 Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: 🚀 Deploy via SSH
+      - name: 📄 Generate .env
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            set -e
-            cd ~/my-ktor-project || {
-              echo "📦 Клонируем репозиторий..."
-              git clone git@github.com:${{ github.repository }} ~/my-ktor-project
-              cd ~/my-ktor-project
-            }
+          echo "MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}" >> .env
+          echo "MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
 
-            echo "🔁 Pull latest changes"
-            git reset --hard
-            git pull origin main
-
-            echo "🛑 Останавливаем контейнеры"
-            docker-compose down || true
-
-            echo "🧹 Чистим старые билды"
-            rm -f app.jar
-
-            echo "⬆️ Копируем новый JAR"
-            exit
-          EOF
-
-      - name: ⬆️ Copy JAR to server
+      - name: 📤 Copy files to server
         run: |
           scp -i ~/.ssh/deploy_key build/libs/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/app.jar
+          scp -i ~/.ssh/deploy_key .env ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/.env
+          scp -i ~/.ssh/deploy_key docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/docker-compose.yml
 
-      - name: 🚀 Restart app
+      - name: 🚀 SSH Deploy
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             cd ~/my-ktor-project
-            echo "🚀 Перезапуск приложения"
+
+            echo "🛑 Останавливаем старые контейнеры"
+            docker-compose down
+
+            echo "🚀 Запускаем новые контейнеры"
             docker-compose up -d --build
           EOF
