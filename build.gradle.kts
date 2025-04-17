@@ -69,4 +69,7 @@ tasks.withType<ProcessResources> {
 
 tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
     archiveFileName.set("crypto-backend-ktor.jar")
+    manifest {
+        attributes["Main-Class"] = "com.example.ApplicationKt"
+    }
 }
