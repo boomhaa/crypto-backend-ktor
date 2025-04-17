@@ -8,27 +8,35 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 
 class TradingPairsRepository {
 
-    fun saveAll(pairs: List<PairInfo>) = transaction {
-        pairs.forEach { pairInfo ->
-            val existingPair = TradingPairsTable.select {
-                TradingPairsTable.pair eq pairInfo.pair
-            }.singleOrNull()
+    private val logger = LoggerFactory.getLogger(TradingPairsRepository::class.java)
 
-            if (existingPair != null){
-                TradingPairsTable.update({TradingPairsTable.pair eq pairInfo.pair}) {
-                    it[price] = pairInfo.price
-                }
-            }else{
-                TradingPairsTable.insert {
-                    it[pair] = pairInfo.pair
-                    it[baseAsset] = pairInfo.baseAsset
-                    it[quoteAsset] = pairInfo.quoteAsset
-                    it[price] = pairInfo.price
+    fun saveAll(pairs: List<PairInfo>) = transaction {
+        try {
+            pairs.forEach { pairInfo ->
+                val existingPair = TradingPairsTable.select {
+                    TradingPairsTable.pair eq pairInfo.pair
+                }.singleOrNull()
+
+                if (existingPair != null) {
+                    TradingPairsTable.update({ TradingPairsTable.pair eq pairInfo.pair }) {
+                        it[price] = pairInfo.price
+                    }
+                } else {
+                    TradingPairsTable.insert {
+                        it[pair] = pairInfo.pair
+                        it[baseAsset] = pairInfo.baseAsset
+                        it[quoteAsset] = pairInfo.quoteAsset
+                        it[price] = pairInfo.price
+                    }
                 }
             }
+            logger.info("Data was saved successfully")
+        }catch (e: Exception){
+            logger.error("Error while saving data: $e: ${e.message}")
         }
     }
 

@@ -19,25 +19,28 @@ class PairServices(
     private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
 
     private var lastUpdateTime: Instant = Instant.MIN
-    private val updateInterval = Duration.ofMinutes(5)
+    private val updateInterval = Duration.ofMinutes(2)
 
 
 
     fun startDataRefreshJob() {
         CoroutineScope(Dispatchers.IO).launch {
-            try{
-                refreshDataFromExchange()
-                delay(updateInterval.toMillis())
-            }catch (e: Exception){
-                logger.error("Error while updating data: $e")
+            while (true) {
+                try {
+                    logger.info("Function for saving or updating data from exchange is running")
+                    refreshDataFromExchange()
+                    delay(updateInterval.toMillis())
+                } catch (e: Exception) {
+                    logger.error("Error while updating data: $e")
+                }
             }
-
         }
     }
 
     private fun refreshDataFromExchange() {
         try {
             val pairs = mexcClient.getTraidingPairs()
+            logger.info("Data was sent for saving")
             tradingPairsRepository.saveAll(pairs)
             lastUpdateTime = Instant.now()
         } catch (e: Exception) {
