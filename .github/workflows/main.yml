@@ -75,7 +75,7 @@ jobs:
       - name: 📦 Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: ktor-app
+          name: crypto-backend-ktor
           path: build/libs
 
       - name: 📄 Generate .env for deployment
