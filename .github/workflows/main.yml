@@ -19,7 +19,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 🔐 Set permissions for gradlew
+      - name: 🔐 Make gradlew executable
         run: chmod +x ./gradlew
 
       - name: 🔨 Build shadowJar
@@ -28,8 +28,8 @@ jobs:
       - name: 📤 Upload jar
         uses: actions/upload-artifact@v4
         with:
-          name: ktor-app
-          path: build/libs/*.jar
+          name: crypto-backend-ktor
+          path: build/libs/crypto-backend-ktor.jar
 
   test:
     name: 🧪 Test
@@ -46,7 +46,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 🔐 Set permissions for gradlew
+      - name: 🔐 Make gradlew executable
         run: chmod +x ./gradlew
 
       - name: 📄 Generate .env for tests
@@ -75,7 +75,7 @@ jobs:
       - name: 📦 Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: ktor-app
+          name: crypto-backend-ktor
           path: build/libs
 
       - name: 📄 Generate .env for deployment
@@ -96,8 +96,8 @@ jobs:
 
       - name: 📤 Upload files to server
         run: |
-          scp -o StrictHostKeyChecking=no -r \
-            build/libs/*.jar \
+          scp -o StrictHostKeyChecking=no \
+            build/libs/crypto-backend-ktor.jar \
             .env \
             Dockerfile \
             docker-compose.yml \
@@ -110,10 +110,10 @@ jobs:
             cd ~/crypto-backend-ktor
 
             echo "📦 Creating volume if not exists"
-            docker volume create pgdata
+            docker volume create --name=postgres_data || true
 
             echo "🛑 Stopping old containers"
-            docker-compose down
+            docker-compose down || true
 
             echo "🚀 Starting new containers"
             docker-compose up -d --build
