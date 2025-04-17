@@ -131,6 +131,8 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             cd ~/my-ktor-project
+            echo "📦 Гарантируем, что том существует"
+            docker volume create postgres_data
             echo "🛑 Останавливаем старые контейнеры"
             docker-compose down
             echo "🚀 Запускаем новые контейнеры"
