@@ -1,49 +1,31 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15
-    restart: always
-    environment:
-      POSTGRES_DB: $DB_NAME
-      POSTGRES_USER: $DB_USER
-      POSTGRES_PASSWORD: $DB_PASSWORD
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${DB_PORT}:5432"
-    networks:
-      - backend-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $DB_USER -d $DB_NAME"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  crypto-backend:
+  app:
     build: .
-    depends_on:
-      postgres:
-        condition: service_healthy
     ports:
       - "8080:8080"
-    restart: always
     environment:
-      DB_HOST: $DB_HOST
-      DB_PORT: $DB_PORT
-      DB_NAME: $DB_NAME
-      DB_USER: $DB_USER
-      DB_PASSWORD: $DB_PASSWORD
-      MEXC_API_KEY: $MEXC_API_KEY
-      MEXC_SECRET_KEY: $MEXC_SECRET_KEY
-    env_file:
-      - .env
-    networks:
-      - backend-network
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      - postgres
+    restart: unless-stopped
 
-networks:
-  backend-network:
-    driver: bridge
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
 volumes:
   postgres_data:

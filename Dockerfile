@@ -1,21 +1,27 @@
-# Build stage
-FROM gradle:7.6-jdk17 AS build
+# Используем образ с JDK 17
+FROM eclipse-temurin:17-jdk-jammy as builder
+
+# Рабочая директория
 WORKDIR /app
 
-# Копируем только необходимые для сборки файлы
-COPY build.gradle.kts settings.gradle.kts /app/
-COPY src /app/src
+# Копируем Gradle файлы для кэширования
+COPY gradlew .
+COPY gradle gradle
+COPY build.gradle.kts .
+COPY settings.gradle.kts .
+COPY src src
 
-# Запускаем сборку с кэшированием зависимостей
-RUN gradle --no-daemon dependencies
-RUN gradle shadowJar --no-daemon --stacktrace --info
+# Запускаем сборку проекта с созданием shadow JAR
+RUN chmod +x gradlew && ./gradlew shadowJar
 
-# Run stage
-FROM eclipse-temurin:17-jre
+# Финальный образ
+FROM eclipse-temurin:17-jre-jammy
+
 WORKDIR /app
 
-COPY --from=build /app/build/libs/crypto-backend-ktor.jar /app/
-COPY .env /app/
+# Копируем собранный JAR из builder
+COPY --from=builder /app/build/libs/crypto-backend-ktor.jar .
+COPY .env .
 
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "crypto-backend-ktor.jar"]
+# Команда для запуска приложения
+CMD ["java", "-jar", "crypto-backend-ktor.jar"]

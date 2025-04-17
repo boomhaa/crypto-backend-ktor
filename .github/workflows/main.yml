@@ -4,60 +4,68 @@ on:
   push:
     branches: [ main ]
 
-env:
-  SSH_HOST: ${{ secrets.SERVER_HOST }}
-  SSH_USER: ${{ secrets.SERVER_USER }}
-  SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-  REMOTE_DIR: /path/to/your/project
-  DOCKER_COMPOSE_VERSION: 1.29.2
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Generate .env file
-      run: |
-        cat <<EOF > .env
-        DB_HOST=${{ secrets.DB_HOST }}
-        DB_PORT=${{ secrets.DB_PORT }}
-        DB_NAME=${{ secrets.DB_NAME }}
-        DB_USER=${{ secrets.DB_USER }}
-        DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-        MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}
-        MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}
-        EOF
+      # Устанавливаем JDK
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Install Docker Compose
-      run: |
-        sudo curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
+      # Генерируем .env файл из секретов
+      - name: Create .env file
+        run: |
+          cat <<EOF > .env
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}
+          MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}
+          SERVER_HOST=${{ secrets.SERVER_HOST }}
+          SERVER_USER=${{ secrets.SERVER_USER }}
+          SSH_PRIVATE_KEY=${{ secrets.SSH_PRIVATE_KEY }}
+          EOF
 
-    - name: Copy files to server
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: ".github/workflows/main.yml,Dockerfile,docker-compose.yml,.env"
-        target: ${{ env.REMOTE_DIR }}
+      # Собираем JAR
+      - name: Build with Gradle
+        run: ./gradlew shadowJar
 
-    - name: SSH and deploy
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          cd $REMOTE_DIR
-          # Создаём volume если он не существует
-          docker volume ls -q | grep -w postgres_data || docker volume create postgres_data
-          # Чистим предыдущие сборки
-          docker-compose down
-          docker system prune -f
-          # Запускаем с подробными логами
-          docker-compose build --no-cache --progress=plain
-          docker-compose up -d
+      # Собираем Docker образ
+      - name: Build Docker image
+        run: docker-compose build
+
+      # Сохраняем образ в artifact
+      - name: Save Docker image
+        run: docker save $(docker-compose images | awk 'NR==3 {print $2}') -o image.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: image.tar
+
+      # Деплой на сервер
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Создаем volume для PostgreSQL если его нет
+            docker volume ls -q | grep -q postgres_data || docker volume create postgres_data
+            
+            # Получаем и загружаем образ
+            mkdir -p ~/crypto-backend-ktor
+            cd ~/crypto-backend-ktor
+            docker load -i image.tar
+            
+            # Запускаем приложение
+            docker-compose down
+            docker-compose up -d
