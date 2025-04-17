@@ -8,7 +8,7 @@ env:
   SSH_HOST: ${{ secrets.SERVER_HOST }}
   SSH_USER: ${{ secrets.SERVER_USER }}
   SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-  REMOTE_DIR: ~/
+  REMOTE_DIR: /path/to/your/project
   DOCKER_COMPOSE_VERSION: 1.29.2
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Generate .env file
       run: |
@@ -55,6 +55,9 @@ jobs:
           cd $REMOTE_DIR
           # Создаём volume если он не существует
           docker volume ls -q | grep -w postgres_data || docker volume create postgres_data
+          # Чистим предыдущие сборки
           docker-compose down
-          docker-compose build --no-cache
+          docker system prune -f
+          # Запускаем с подробными логами
+          docker-compose build --no-cache --progress=plain
           docker-compose up -d
