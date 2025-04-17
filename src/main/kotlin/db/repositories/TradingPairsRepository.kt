@@ -46,7 +46,8 @@ class TradingPairsRepository {
                 pair = row[TradingPairsTable.pair],
                 baseAsset = row[TradingPairsTable.baseAsset],
                 quoteAsset = row[TradingPairsTable.quoteAsset],
-                price = row[TradingPairsTable.price]?.toPlainString()
+                price = row[TradingPairsTable.price]?.toPlainString(),
+                lastUpdated = row[TradingPairsTable.lastUpdated].toString()
             )
         }
     }
@@ -59,7 +60,8 @@ class TradingPairsRepository {
                 pair = row[TradingPairsTable.pair],
                 baseAsset = row[TradingPairsTable.baseAsset],
                 quoteAsset = row[TradingPairsTable.quoteAsset],
-                price = row[TradingPairsTable.price]?.toPlainString()
+                price = row[TradingPairsTable.price]?.toPlainString(),
+                lastUpdated = row[TradingPairsTable.lastUpdated].toString()
             )
 
         }
