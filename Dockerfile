@@ -2,8 +2,7 @@ FROM gradle:8.5-jdk17 AS build
 
 WORKDIR /app
 COPY . .
-RUN chmod +x ./gradlew
-RUN ./gradlew clean shadowJar --no-daemon
+RUN gradle clean shadowJar --no-daemon
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
