@@ -30,8 +30,6 @@ object DbConfig {
             logger.info("Make migration db")
             migrateDatabase(dataSource)
             logger.info("Migration made successful")
-
-            checkTableExists(dataSource)
         } catch (e: Exception) {
             logger.error("Error while init db: ${e.message}", e)
         }
@@ -59,17 +57,4 @@ object DbConfig {
         flyway.migrate()
     }
 
-    private fun checkTableExists(dataSource: DataSource) {
-        dataSource.connection.use { conn ->
-            val statement = conn.prepareStatement(
-                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'trading_pairs')"
-            )
-            val result = statement.executeQuery()
-            if (result.next() && result.getBoolean(1)) {
-                logger.info("table trading_pairs exists")
-            } else {
-                logger.error("Table trading_pairs wasn't created!")
-            }
-        }
-    }
 }
