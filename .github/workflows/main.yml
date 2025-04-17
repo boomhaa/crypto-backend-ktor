@@ -85,7 +85,7 @@ jobs:
           java-version: '17'
 
       - name: Download built JAR
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ktor-app
           path: build/libs/
@@ -100,7 +100,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
