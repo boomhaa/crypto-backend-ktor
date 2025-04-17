@@ -54,6 +54,7 @@ object DbConfig {
             .schemas("public")
             .baselineOnMigrate(true)
             .load()
+        flyway.repair()
         flyway.migrate()
     }
 
