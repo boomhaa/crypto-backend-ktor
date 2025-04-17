@@ -9,14 +9,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       # Устанавливаем JDK
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      # Устанавливаем Docker и Docker Compose
+      - name: Install Docker and Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
       # Генерируем .env файл из секретов
       - name: Create .env file
@@ -36,9 +45,7 @@ jobs:
 
       # Собираем JAR
       - name: Build with Gradle
-        run: |
-          chmod +x ./gradlew 
-          ./gradlew shadowJar
+        run: ./gradlew shadowJar
 
       # Собираем Docker образ
       - name: Build Docker image
@@ -47,7 +54,7 @@ jobs:
       # Сохраняем образ в artifact
       - name: Save Docker image
         run: docker save $(docker-compose images | awk 'NR==3 {print $2}') -o image.tar
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         with:
           name: docker-image
           path: image.tar
