@@ -46,7 +46,9 @@ jobs:
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
 
       - name: Build JAR
-        run: ./gradlew clean shadowJar --no-daemon
+        run: |
+          chmod +x ./gradlew 
+          ./gradlew clean shadowJar --no-daemon
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
