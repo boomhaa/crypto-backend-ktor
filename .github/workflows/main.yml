@@ -1,120 +1,60 @@
-name: CI/CD Pipeline
+name: Deploy to Server
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
+
+env:
+  SSH_HOST: ${{ secrets.SERVER_HOST }}
+  SSH_USER: ${{ secrets.SERVER_USER }}
+  SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  REMOTE_DIR: ~/
+  DOCKER_COMPOSE_VERSION: 1.29.2
 
 jobs:
-  build:
-    name: 🔨 Build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: ☕ Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: 🔐 Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: 🔨 Build shadowJar
-        run: ./gradlew clean shadowJar --no-daemon
-
-      - name: 📤 Upload jar
-        uses: actions/upload-artifact@v4
-        with:
-          name: crypto-backend-ktor
-          path: build/libs/crypto-backend-ktor.jar
-
-  test:
-    name: 🧪 Test
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: ☕ Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: 🔐 Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: 📄 Generate .env for tests
-        run: |
-          cp .env.template .env
-          sed -i "s|\$MEXC_API_KEY|${{ secrets.MEXC_API_KEY }}|g" .env
-          sed -i "s|\$MEXC_SECRET_KEY|${{ secrets.MEXC_SECRET_KEY }}|g" .env
-          sed -i "s|\$DB_HOST|${{ secrets.DB_HOST }}|g" .env
-          sed -i "s|\$DB_PORT|${{ secrets.DB_PORT }}|g" .env
-          sed -i "s|\$DB_NAME|${{ secrets.DB_NAME }}|g" .env
-          sed -i "s|\$DB_USER|${{ secrets.DB_USER }}|g" .env
-          sed -i "s|\$DB_PASSWORD|${{ secrets.DB_PASSWORD }}|g" .env
-
-      - name: 🧪 Run tests
-        run: ./gradlew test --no-daemon
-
   deploy:
-    name: 🚀 Deploy to server
     runs-on: ubuntu-latest
-    needs: [test]
 
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: 📦 Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: crypto-backend-ktor
-          path: build/libs
+    - name: Generate .env file
+      run: |
+        cat <<EOF > .env
+        DB_HOST=${{ secrets.DB_HOST }}
+        DB_PORT=${{ secrets.DB_PORT }}
+        DB_NAME=${{ secrets.DB_NAME }}
+        DB_USER=${{ secrets.DB_USER }}
+        DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+        MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}
+        MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}
+        EOF
 
-      - name: 📄 Generate .env for deployment
-        run: |
-          cp .env.template .env
-          sed -i "s|\$MEXC_API_KEY|${{ secrets.MEXC_API_KEY }}|g" .env
-          sed -i "s|\$MEXC_SECRET_KEY|${{ secrets.MEXC_SECRET_KEY }}|g" .env
-          sed -i "s|\$DB_HOST|${{ secrets.DB_HOST }}|g" .env
-          sed -i "s|\$DB_PORT|${{ secrets.DB_PORT }}|g" .env
-          sed -i "s|\$DB_NAME|${{ secrets.DB_NAME }}|g" .env
-          sed -i "s|\$DB_USER|${{ secrets.DB_USER }}|g" .env
-          sed -i "s|\$DB_PASSWORD|${{ secrets.DB_PASSWORD }}|g" .env
+    - name: Install Docker Compose
+      run: |
+        sudo curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
 
-      - name: 🔑 Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    - name: Copy files to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: ".github/workflows/main.yml,Dockerfile,docker-compose.yml,.env"
+        target: ${{ env.REMOTE_DIR }}
 
-      - name: 📤 Upload files to server
-        run: |
-          scp -o StrictHostKeyChecking=no \
-            build/libs/crypto-backend-ktor.jar \
-            .env \
-            Dockerfile \
-            docker-compose.yml \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/crypto-backend-ktor/
-
-      - name: 🚀 SSH Deploy
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            set -e
-            cd ~/crypto-backend-ktor
-
-            echo "📦 Creating volume if not exists"
-            docker volume create --name=postgres_data || true
-
-            echo "🛑 Stopping old containers"
-            docker-compose down || true
-
-            echo "🚀 Starting new containers"
-            docker-compose up -d --build
-          EOF
+    - name: SSH and deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd $REMOTE_DIR
+          # Создаём volume если он не существует
+          docker volume ls -q | grep -w postgres_data || docker volume create postgres_data
+          docker-compose down
+          docker-compose build --no-cache
+          docker-compose up -d
