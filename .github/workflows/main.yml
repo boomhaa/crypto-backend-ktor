@@ -1,119 +1,99 @@
-name: CI/CD Pipeline
+name: Deploy Ktor App
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
-    name: 🔨 Build
     runs-on: ubuntu-latest
-
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: ☕ Set up JDK
-        uses: actions/setup-java@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 🔐 Set permissions for gradlew
-        run: chmod +x ./gradlew
+      - name: Generate .env
+        run: |
+          cp .env.template .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}" >> .env
+          echo "MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}" >> .env
 
-      - name: 🔨 Build shadowJar
-        run: ./gradlew clean shadowJar --no-daemon
-
-      - name: 📤 Upload jar
-        uses: actions/upload-artifact@v4
-        with:
-          name: ktor-app
-          path: build/libs/*.jar
+      - name: Build
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean build --no-daemon
 
   test:
-    name: 🧪 Test
     runs-on: ubuntu-latest
     needs: build
-
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: ☕ Set up JDK
-        uses: actions/setup-java@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 🔐 Set permissions for gradlew
-        run: chmod +x ./gradlew
-
-      - name: 📄 Generate .env for tests
+      - name: Generate .env
         run: |
           cp .env.template .env
-          sed -i "s|\$MEXC_API_KEY|${{ secrets.MEXC_API_KEY }}|g" .env
-          sed -i "s|\$MEXC_SECRET_KEY|${{ secrets.MEXC_SECRET_KEY }}|g" .env
-          sed -i "s|\$DB_HOST|${{ secrets.DB_HOST }}|g" .env
-          sed -i "s|\$DB_PORT|${{ secrets.DB_PORT }}|g" .env
-          sed -i "s|\$DB_NAME|${{ secrets.DB_NAME }}|g" .env
-          sed -i "s|\$DB_USER|${{ secrets.DB_USER }}|g" .env
-          sed -i "s|\$DB_PASSWORD|${{ secrets.DB_PASSWORD }}|g" .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}" >> .env
+          echo "MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}" >> .env
 
-      - name: 🧪 Run tests
-        run: ./gradlew test --no-daemon
+      - name: Test
+        run: |
+          chmod +x ./gradlew
+          ./gradlew test --no-daemon
 
   deploy:
-    name: 🚀 Deploy to server
     runs-on: ubuntu-latest
-    needs: [test]
-
+    needs: test
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: 📦 Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ktor-app
-          path: build/libs
-
-      - name: 📄 Generate .env for deployment
-        run: |
-          cp .env.template .env
-          sed -i "s|\$MEXC_API_KEY|${{ secrets.MEXC_API_KEY }}|g" .env
-          sed -i "s|\$MEXC_SECRET_KEY|${{ secrets.MEXC_SECRET_KEY }}|g" .env
-          sed -i "s|\$DB_HOST|${{ secrets.DB_HOST }}|g" .env
-          sed -i "s|\$DB_PORT|${{ secrets.DB_PORT }}|g" .env
-          sed -i "s|\$DB_NAME|${{ secrets.DB_NAME }}|g" .env
-          sed -i "s|\$DB_USER|${{ secrets.DB_USER }}|g" .env
-          sed -i "s|\$DB_PASSWORD|${{ secrets.DB_PASSWORD }}|g" .env
-
-      - name: 🔑 Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: 📤 Upload files to server
+      - name: Generate .env
         run: |
-          scp -o StrictHostKeyChecking=no -r \
-            build/libs/*.jar \
-            .env \
-            docker-compose.yml \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/
+          cp .env.template .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}" >> .env
+          echo "MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}" >> .env
 
-      - name: 🚀 SSH Deploy
+      - name: Build Docker image
+        run: docker build -t ktor-app:latest .
+
+      - name: Copy files to server
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            set -e
-            cd ~/my-ktor-project
+          scp \
+            -o StrictHostKeyChecking=no \
+            docker-compose.yml .env \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/ktor-app
 
-            echo "📦 Creating volume if not exists"
-            docker volume create postgres_data
-
-            echo "🛑 Stopping old containers"
-            docker-compose down
-
-            echo "🚀 Starting new containers"
-            docker-compose up -d --build
-          EOF
+      - name: Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
+          cd ktor-app
+          docker-compose down
+          docker-compose up -d --build
+          ENDSSH
