@@ -36,7 +36,9 @@ jobs:
 
       # Собираем JAR
       - name: Build with Gradle
-        run: ./gradlew shadowJar
+        run: |
+          chmod +x ./gradlew 
+          ./gradlew shadowJar
 
       # Собираем Docker образ
       - name: Build Docker image
