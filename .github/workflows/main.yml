@@ -84,7 +84,7 @@ jobs:
   deploy:
     name: 🚀 Deploy to Server
     runs-on: ubuntu-latest
-    needs: [build, test]
+    needs: [ build, test ]
     if: github.ref == 'refs/heads/main'
 
     steps:
@@ -99,6 +99,17 @@ jobs:
 
       - name: 📂 List downloaded JAR
         run: ls -la app/
+
+      - name: 📝 Create Dockerfile
+        run: |
+          cat << 'EOF' > Dockerfile
+          FROM eclipse-temurin:17-jdk-jammy
+          WORKDIR /app
+          COPY crypto-backend-ktor.jar /app/crypto-backend-ktor.jar
+          COPY .env /app/.env
+          EXPOSE 8080
+          ENTRYPOINT ["java", "-jar", "crypto-backend-ktor.jar"]
+          EOF
 
       - name: 🔐 Setup SSH
         run: |
@@ -126,6 +137,7 @@ jobs:
           scp -i ~/.ssh/deploy_key app/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/crypto-backend-ktor.jar
           scp -i ~/.ssh/deploy_key .env ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/.env
           scp -i ~/.ssh/deploy_key docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/docker-compose.yml
+          scp -i ~/.ssh/deploy_key Dockerfile ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/Dockerfile
 
       - name: 🐳 Create Docker Volume
         run: |
