@@ -100,17 +100,6 @@ jobs:
       - name: 📂 List downloaded JAR
         run: ls -la app/
 
-      - name: 📝 Create Dockerfile
-        run: |
-          cat << 'EOF' > Dockerfile
-          FROM eclipse-temurin:17-jdk-jammy
-          WORKDIR /app
-          COPY crypto-backend-ktor.jar /app/crypto-backend-ktor.jar
-          COPY .env /app/.env
-          EXPOSE 8080
-          ENTRYPOINT ["java", "-jar", "crypto-backend-ktor.jar"]
-          EOF
-
       - name: 🔐 Setup SSH
         run: |
           mkdir -p ~/.ssh
