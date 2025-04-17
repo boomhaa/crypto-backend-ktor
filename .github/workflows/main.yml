@@ -93,7 +93,9 @@ jobs:
           path: build/libs/
 
       - name: Run tests
-        run: ./gradlew test --no-daemon
+        run: |
+           chmod +x ./gradlew 
+           ./gradlew test --no-daemon
 
   deploy:
     name: 🚀 Deploy to Server
