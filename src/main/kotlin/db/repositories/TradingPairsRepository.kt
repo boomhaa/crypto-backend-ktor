@@ -3,6 +3,8 @@ package com.example.db.repositories
 import com.example.configs.ExchangeConstants
 import com.example.db.tables.TradingPairsTable
 import com.example.dto.PairInfo
+import org.jetbrains.exposed.sql.StdOutSqlLogger
+import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.lowerCase
 import org.jetbrains.exposed.sql.select
@@ -84,6 +86,7 @@ class TradingPairsRepository {
     }
 
     fun findByQuery(query: String): List<PairInfo> = transaction {
+        addLogger(StdOutSqlLogger)
         val loweredQuery = "%${query.lowercase()}%"
         TradingPairsTable
             .select { TradingPairsTable.pair.lowerCase() like loweredQuery }
@@ -92,6 +95,27 @@ class TradingPairsRepository {
                     row[TradingPairsTable.price]?.toPlainString()
                 } catch (e: Exception) {
                     logger.error("findByQuery: Can't convert price to string: $e: ${e.message}")
+                    null
+                }
+                PairInfo(
+                    pair = row[TradingPairsTable.pair],
+                    baseAsset = row[TradingPairsTable.baseAsset],
+                    quoteAsset = row[TradingPairsTable.quoteAsset],
+                    price = price,
+                    lastUpdated = row[TradingPairsTable.lastUpdated].toString()
+                )
+            }
+    }
+
+    fun findByName(pair: String): List<PairInfo> = transaction{
+        val loweredPair = pair.lowercase()
+        TradingPairsTable.select { TradingPairsTable.pair.lowerCase() eq loweredPair }
+            .map {
+                    row ->
+                val price = try {
+                    row[TradingPairsTable.price]?.toPlainString()
+                } catch (e: Exception) {
+                    logger.error("findByName: Can't convert price to string: $e: ${e.message}")
                     null
                 }
                 PairInfo(

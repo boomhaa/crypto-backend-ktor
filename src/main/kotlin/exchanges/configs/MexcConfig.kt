@@ -7,6 +7,7 @@ object MexcConfig {
         const val EXCHANGE_INFO = "/api/v3/exchangeInfo"
         const val KLINE = "/api/v3/klines"
         const val PRICE = "/api/v3/ticker/price"
+        const val PRICE_LAST_24H = "/api/v3/ticker/24hr"
     }
 
     object Intervals {

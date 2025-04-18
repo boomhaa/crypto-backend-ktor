@@ -17,16 +17,24 @@ fun Route.pairsRoutes(pairService: PairServices) {
             val popularPairs = pairService.getPopularPairs()
             try {
                 call.respond(HttpStatusCode.OK, popularPairs)
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 call.respond(HttpStatusCode.OK) { "error" to e.message }
             }
         }
         get("/search") {
             val query = call.request.queryParameters["q"].orEmpty()
-            if (query.isEmpty()){
+            if (query.isEmpty()) {
                 call.respond(HttpStatusCode.BadRequest, "Query is required")
             }
             val result = pairService.searchPairs(query)
+            call.respond(HttpStatusCode.OK, result)
+        }
+        get("{pair}") {
+            val pair = call.parameters["pair"] ?: return@get call.respond(
+                HttpStatusCode.BadRequest,
+                "Parameter is required"
+            )
+            val result = pairService.getPairDetailInfo(pair)
             call.respond(HttpStatusCode.OK, result)
         }
     }

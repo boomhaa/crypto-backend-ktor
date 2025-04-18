@@ -31,7 +31,7 @@ class PairServices(
                     refreshDataFromExchange()
                     delay(updateInterval.toMillis())
                 } catch (e: Exception) {
-                    logger.error("Error while updating data: $e")
+                    logger.error("Error while updating data: $e: line 34")
                 }
             }
         }
@@ -44,16 +44,11 @@ class PairServices(
             tradingPairsRepository.saveAll(pairs)
             lastUpdateTime = Instant.now()
         } catch (e: Exception) {
-            logger.error(e.toString() + e.message)
-            throw IllegalStateException(e.message)
+            logger.error(e.toString() + e.message + " line 47")
         }
     }
 
     fun getPopularPairs(): List<PairInfo> {
-        val now = Instant.now()
-        if (Duration.between(lastUpdateTime, now) > updateInterval) {
-            refreshDataFromExchange()
-        }
         return tradingPairsRepository.findPopular()
     }
 
@@ -63,5 +58,9 @@ class PairServices(
 
     fun searchPairs(query: String): List<PairInfo>{
         return tradingPairsRepository.findByQuery(query)
+    }
+
+    fun getPairDetailInfo(pair: String): List<PairInfo>{
+        return tradingPairsRepository.findByName(pair)
     }
 }
