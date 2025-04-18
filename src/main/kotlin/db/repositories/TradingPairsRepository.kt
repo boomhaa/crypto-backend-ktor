@@ -4,6 +4,7 @@ import com.example.configs.ExchangeConstants
 import com.example.db.tables.TradingPairsTable
 import com.example.dto.PairInfo
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.lowerCase
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -63,8 +64,21 @@ class TradingPairsRepository {
                 price = row[TradingPairsTable.price]?.toPlainString(),
                 lastUpdated = row[TradingPairsTable.lastUpdated].toString()
             )
-
         }
     }
 
+    fun findByQuery(query: String):List<PairInfo> = transaction{
+        val loweredQuery = "%${query.lowercase()}%"
+        TradingPairsTable
+            .select { TradingPairsTable.pair.lowerCase() like loweredQuery }
+            .map { row ->
+                PairInfo(
+                    pair = row[TradingPairsTable.pair],
+                    baseAsset = row[TradingPairsTable.baseAsset],
+                    quoteAsset = row[TradingPairsTable.quoteAsset],
+                    price = row[TradingPairsTable.price]?.toPlainString(),
+                    lastUpdated = row[TradingPairsTable.lastUpdated].toString()
+                )
+            }
+    }
 }
