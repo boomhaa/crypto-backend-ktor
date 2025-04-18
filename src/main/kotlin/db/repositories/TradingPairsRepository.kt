@@ -10,6 +10,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
+import java.time.Instant
 
 class TradingPairsRepository {
 
@@ -17,17 +18,17 @@ class TradingPairsRepository {
 
     fun saveAll(pairs: List<PairInfo>) = transaction {
         try {
-            val existingPairs =
-                TradingPairsTable.selectAll().associateBy { it[TradingPairsTable.pair] }
-
             pairs.forEach { pairInfo ->
-                val existingPair = existingPairs[pairInfo.pair]
-                if (existingPair != null) {
-                    TradingPairsTable.update({ TradingPairsTable.pair eq pairInfo.pair }) {
+                val exists =
+                    TradingPairsTable.select { TradingPairsTable.pair eq pairInfo.pair }
+                        .limit(1)
+                        .count() > 0
+                if (exists){
+                    TradingPairsTable.update({TradingPairsTable.pair eq pairInfo.pair}){
                         it[price] = pairInfo.price?.toBigDecimal()
-                        it[lastUpdated] = java.time.Instant.now()
+                        it[lastUpdated] = Instant.now()
                     }
-                } else {
+                }else{
                     TradingPairsTable.insert {
                         it[pair] = pairInfo.pair
                         it[baseAsset] = pairInfo.baseAsset
@@ -36,6 +37,7 @@ class TradingPairsRepository {
                     }
                 }
             }
+
             logger.info("Data was saved successfully")
         } catch (e: Exception) {
             logger.error("Error while saving data: $e: ${e.message}")
