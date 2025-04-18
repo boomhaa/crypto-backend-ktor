@@ -66,4 +66,19 @@ class PairServicesTest {
 
         assertTrue(result.isEmpty())
     }
+
+    @Test
+    fun `searchPairs should return pairs containing query`() {
+        val mockPairs = listOf(
+            PairInfo("BTCUSDT", "BTC", "USDT"),
+            PairInfo("DOGEUSDT", "DOGE", "USDT"),
+            PairInfo("ETHBTC", "ETH", "BTC")
+        )
+        whenever(tradingPairsRepository.findAll()).thenReturn(mockPairs)
+
+        val result = pairServices.searchPairs("btc")
+        assertEquals(2, result.size)
+        assertTrue(result.any { it.pair == "BTCUSDT" })
+        assertTrue(result.any { it.pair == "ETHBTC" })
+    }
 }
