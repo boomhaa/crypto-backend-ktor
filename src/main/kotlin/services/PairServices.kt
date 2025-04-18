@@ -62,8 +62,8 @@ class PairServices(
     }
 
     fun searchPairs(query: String): List<PairInfo>{
-        return tradingPairsRepository.findAll().filter { pair ->
-            pair.pair.contains(query, ignoreCase = true)
+        return tradingPairsRepository.findAll().filter { pairInfo ->
+            pairInfo.pair.contains(query, ignoreCase = true)
         }
     }
 }
