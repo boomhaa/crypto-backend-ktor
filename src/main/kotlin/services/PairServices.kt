@@ -61,4 +61,7 @@ class PairServices(
         return tradingPairsRepository.findAll()
     }
 
+    fun searchPairs(query: String): List<PairInfo>{
+        return tradingPairsRepository.findByQuery(query)
+    }
 }
