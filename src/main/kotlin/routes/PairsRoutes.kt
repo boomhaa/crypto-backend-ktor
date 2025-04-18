@@ -21,5 +21,13 @@ fun Route.pairsRoutes(pairService: PairServices) {
                 call.respond(HttpStatusCode.OK) { "error" to e.message }
             }
         }
+        get("/search") {
+            val query = call.request.queryParameters["q"].orEmpty()
+            if (query.isEmpty()){
+                call.respond(HttpStatusCode.BadRequest, "Query is required")
+            }
+            val result = pairService.searchPairs(query)
+            call.respond(HttpStatusCode.OK, result)
+        }
     }
 }
