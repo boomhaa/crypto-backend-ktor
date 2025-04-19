@@ -11,6 +11,11 @@ object TradingPairsTable : Table("trading_pairs") {
     val quoteAsset = varchar("quote_asset", 100)
     val price = decimal("price", 100, 8).nullable()
     val lastUpdated = timestamp("last_updated").default(Instant.now())
+    val highPrice24h = decimal("high_price_24h", 100, 8).nullable()
+    val lowPrice24h = decimal("low_price_24h", 100, 8).nullable()
+    val volumeBaseAsset = decimal("volume_base_asset", 100, 8).nullable()
+    val volumeQuoteAsset = decimal("volume_quote_asset", 100, 8).nullable()
+
 
     override val primaryKey = PrimaryKey(id)
 

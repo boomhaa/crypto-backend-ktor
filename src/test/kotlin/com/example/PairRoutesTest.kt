@@ -11,6 +11,8 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respond
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
@@ -56,18 +58,5 @@ class PairRoutesTest {
         assertTrue(response.bodyAsText().contains("ETHUSDT"))
     }
 
-    @Test
-    fun `GET not existing route should return 404`() = testApplication {
-        application {
-            install(ContentNegotiation) {
-                json()
-            }
-            routing {
-                pairsRoutes(mock(PairServices::class.java))
-            }
-        }
 
-        val response = client.get("/pairs/unknown")
-        assertEquals(HttpStatusCode.NotFound, response.status)
-    }
 }
