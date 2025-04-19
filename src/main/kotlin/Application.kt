@@ -16,11 +16,11 @@ fun Application.module() {
 
     install(StatusPages) {
         status(HttpStatusCode.NotFound) { call, status ->
-            call.respond(status, mapOf("error" to "Страница не найдена"))
+            call.respond(status, mapOf("error" to "Page not found"))
         }
 
         exception<IllegalArgumentException> { call, cause ->
-            if (cause.message?.contains("invalid hex byte") == true) {
+            if (cause.message?.contains("Invalid hex byte") == true) {
                 call.respond(
                     HttpStatusCode.BadRequest,
                     mapOf("error" to "Invalid URL encoding in request")
