@@ -1,6 +1,7 @@
 package com.example.services
 
 import com.example.db.repositories.TradingPairsRepository
+import com.example.dto.PairDetailInfo
 import com.example.dto.PairInfo
 import com.example.exchanges.mexc.MexcClient
 import kotlinx.coroutines.CoroutineScope
@@ -60,7 +61,7 @@ class PairServices(
         return tradingPairsRepository.findByQuery(query)
     }
 
-    fun getPairDetailInfo(pair: String): List<PairInfo>{
+    fun getPairDetailInfo(pair: String): List<PairDetailInfo>{
         return tradingPairsRepository.findByName(pair)
     }
 }

@@ -19,3 +19,14 @@ data class MexcPairInfo(
     val baseAsset: String,
     val quoteAsset: String,
 )
+
+@OptIn(ExperimentalSerializationApi::class)
+@JsonIgnoreUnknownKeys
+@Serializable
+data class Pair24hPriceInfo(
+    val symbol: String,
+    val highPrice: String? = null,
+    val lowPrice: String? = null,
+    val volume: String? = null,
+    val quoteVolume: String? = null
+)

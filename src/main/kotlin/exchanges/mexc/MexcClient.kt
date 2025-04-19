@@ -2,6 +2,7 @@ package com.example.exchanges.mexc
 
 import com.example.dto.MexcExchangeInfoResponse
 import com.example.dto.Pair24hPriceInfo
+import com.example.dto.PairDetailInfo
 import com.example.dto.PairInfo
 import io.github.cdimascio.dotenv.*
 import com.example.exchanges.configs.MexcConfig
@@ -19,7 +20,7 @@ class MexcClient(private val httpService: HttpService,
     //private val MEXC_SECRET_KEY: String =
     //    dotenv["MEXC_SECRET_KEY"] ?: throw IllegalStateException("MEXC_SECRET_KEY is not set in .env file")
 
-    fun getTraidingPairs(): List<PairInfo> {
+    fun getTraidingPairs(): List<PairDetailInfo> {
 
         val url = "${MexcConfig.BASE_URL}${MexcConfig.Endpoints.EXCHANGE_INFO}"
         val headers = mapOf("X-MEXC-APIKEY" to MEXC_API_KEY, "Content-Type" to "application/json")
@@ -33,7 +34,7 @@ class MexcClient(private val httpService: HttpService,
 
         return exchangeInfo.symbols.map { pair ->
             val price = prices[pair.symbol]
-            PairInfo(
+            PairDetailInfo(
                 pair = pair.symbol,
                 baseAsset = pair.baseAsset,
                 quoteAsset = pair.quoteAsset,
