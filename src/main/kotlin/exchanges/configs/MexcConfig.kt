@@ -1,5 +1,7 @@
 package com.example.exchanges.configs
 
+import java.math.BigDecimal
+
 object MexcConfig {
     const val BASE_URL = "https://api.mexc.com"
 

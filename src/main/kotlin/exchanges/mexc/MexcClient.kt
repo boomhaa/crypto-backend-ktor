@@ -34,11 +34,19 @@ class MexcClient(private val httpService: HttpService,
 
         return exchangeInfo.symbols.map { pair ->
             val price = prices[pair.symbol]
+            val highPrice24h = price24h[pair.symbol]?.get(0)
+            val lowPrice24h = price24h[pair.symbol]?.get(1)
+            val volumeBaseAsset24h = price24h[pair.symbol]?.get(2)
+            val volumeQuoteAsset24h = price24h[pair.symbol]?.get(3)
             PairDetailInfo(
                 pair = pair.symbol,
                 baseAsset = pair.baseAsset,
                 quoteAsset = pair.quoteAsset,
-                price = price
+                price = price,
+                highPrice = highPrice24h,
+                lowPrice = lowPrice24h,
+                volume = volumeBaseAsset24h,
+                quoteVolume = volumeQuoteAsset24h
             )
         }
     }

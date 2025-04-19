@@ -1,6 +1,8 @@
 package com.example.dto
 
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class PairDetailInfo(
     val pair: String,
     val baseAsset: String,

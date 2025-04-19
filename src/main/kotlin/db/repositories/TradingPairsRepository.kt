@@ -13,6 +13,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 import java.time.Instant
 
 class TradingPairsRepository {
@@ -60,7 +61,7 @@ class TradingPairsRepository {
     fun findAll(): List<PairInfo> = transaction {
         TradingPairsTable.selectAll().map { row ->
             val price = try {
-                row[TradingPairsTable.price]?.toPlainString()
+                row[TradingPairsTable.price]?.toFormattedString()
             } catch (e: Exception) {
                 logger.error("findAll: Can't convert price to string: $e: ${e.message}")
                 null
@@ -81,7 +82,7 @@ class TradingPairsRepository {
             TradingPairsTable.pair inList ExchangeConstants.POPULAR_PAIRS
         }.map { row ->
             val price = try {
-                row[TradingPairsTable.price]?.toPlainString()
+                row[TradingPairsTable.price]?.toFormattedString()
             } catch (e: Exception) {
                 logger.error("findPopular: Can't convert price to string: $e: ${e.message}")
                 null
@@ -103,7 +104,7 @@ class TradingPairsRepository {
             .select { TradingPairsTable.pair.lowerCase() like loweredQuery }
             .map { row ->
                 val price = try {
-                    row[TradingPairsTable.price]?.toPlainString()
+                    row[TradingPairsTable.price]?.toFormattedString()
                 } catch (e: Exception) {
                     logger.error("findByQuery: Can't convert price to string: $e: ${e.message}")
                     null
@@ -124,31 +125,31 @@ class TradingPairsRepository {
             .map {
                     row ->
                 val price = try {
-                    row[TradingPairsTable.price]?.toPlainString()
+                    row[TradingPairsTable.price]?.toFormattedString()
                 } catch (e: Exception) {
                     logger.error("findByName: Can't convert price to string: $e: ${e.message}")
                     null
                 }
                 val highPrice24h = try {
-                    row[TradingPairsTable.highPrice24h]?.toPlainString()
+                    row[TradingPairsTable.highPrice24h]?.toFormattedString()
                 } catch (e: Exception) {
                     logger.error("findByName: Can't convert highPrice24h to string: $e: ${e.message}")
                     null
                 }
                 val lowPrice24h = try {
-                    row[TradingPairsTable.lowPrice24h]?.toPlainString()
+                    row[TradingPairsTable.lowPrice24h]?.toFormattedString()
                 } catch (e: Exception) {
                     logger.error("findByName: Can't convert lowPrice24h to string: $e: ${e.message}")
                     null
                 }
                 val volumeBaseAsset24h = try {
-                    row[TradingPairsTable.lowPrice24h]?.toPlainString()
+                    row[TradingPairsTable.volumeBaseAsset]?.toFormattedString()
                 } catch (e: Exception) {
                     logger.error("findByName: Can't convert volumeBaseAsset24h to string: $e: ${e.message}")
                     null
                 }
                 val volumeQuoteAsset24h = try {
-                    row[TradingPairsTable.lowPrice24h]?.toPlainString()
+                    row[TradingPairsTable.volumeQuoteAsset]?.toFormattedString()
                 } catch (e: Exception) {
                     logger.error("findByName: Can't convert volumeQuoteAsset24h to string: $e: ${e.message}")
                     null
@@ -165,5 +166,16 @@ class TradingPairsRepository {
                     lastUpdated = row[TradingPairsTable.lastUpdated].toString()
                 )
             }
+    }
+
+    private fun BigDecimal?.toFormattedString(): String? {
+        if (this == null) return null
+
+        val plainString = this.toPlainString()
+        return if (plainString.contains('.')) {
+            plainString.replace(Regex("0*$"), "").replace(Regex("\\.$"), "")
+        } else {
+            plainString
+        }
     }
 }

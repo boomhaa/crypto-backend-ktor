@@ -3,6 +3,7 @@ package com.example
 
 import com.example.db.repositories.TradingPairsRepository
 import com.example.db.tables.TradingPairsTable
+import com.example.dto.PairDetailInfo
 import com.example.dto.PairInfo
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -86,6 +87,17 @@ class TradingPairsRepositoryTest {
                 it[price] = BigDecimal("1.0")
                 it[lastUpdated] = Instant.now().minusSeconds(14400)
             }
+            TradingPairsTable.insert {
+                it[pair] = "XRPBTC"
+                it[baseAsset] = "XRP"
+                it[quoteAsset] = "BTC"
+                it[price] = BigDecimal("0.0000150000")
+                it[highPrice24h] = BigDecimal("0.000016")
+                it[lowPrice24h] = BigDecimal("0.0000145")
+                it[volumeBaseAsset] = BigDecimal("100000000")
+                it[volumeQuoteAsset] = BigDecimal("1500")
+                it[lastUpdated] = Instant.now().minusSeconds(2131)
+            }
         }
     }
 
@@ -136,7 +148,7 @@ class TradingPairsRepositoryTest {
 
         val btcUsdt = resultUsdt.first { it.pair == "BTCUSDT" }
 
-        assertEquals("40000.50000000", btcUsdt.price, "Price should match for BTCUSDT")
+        assertEquals("40000.5", btcUsdt.price, "Price should match for BTCUSDT")
         assertTrue(btcUsdt.lastUpdated != null, "lastUpdated should not be null for BTCUSDT")
     }
 
@@ -180,7 +192,7 @@ class TradingPairsRepositoryTest {
 
         assertEquals("BTC", btcUsdt.baseAsset, "Base asset should match for BTCUSDT")
         assertEquals("USDT", btcUsdt.quoteAsset, "Quote asset should match for BTCUSDT")
-        assertEquals("40000.50000000", btcUsdt.price, "Price should match for BTCUSDT")
+        assertEquals("40000.5", btcUsdt.price, "Price should match for BTCUSDT")
         assertTrue(btcUsdt.lastUpdated != null, "lastUpdated should not be null for BTCUSDT")
 
         val noUsdtPrice = result.first { it.pair == "NOUSDTPRICE" }
@@ -203,11 +215,11 @@ class TradingPairsRepositoryTest {
 
         val btcUsdt = result.first { it.pair == "BTCUSDT" }
 
-        assertEquals("40000.50000000", btcUsdt.price, "Price should match for popular BTCUSDT")
+        assertEquals("40000.5", btcUsdt.price, "Price should match for popular BTCUSDT")
 
         val ethBtc = result.first { it.pair == "DOGEUSDT" }
 
-        assertEquals("0.15000000", ethBtc.price, "Price should match for popular ETHBTC")
+        assertEquals("0.15", ethBtc.price, "Price should match for popular ETHBTC")
     }
 
     @Test
@@ -235,15 +247,15 @@ class TradingPairsRepositoryTest {
         transaction { SchemaUtils.drop(TradingPairsTable); SchemaUtils.create(TradingPairsTable) }
 
         val newPairs = listOf(
-            PairInfo("NEWUSDT", "NEW", "USDT", "100.0", "dummy"),
-            PairInfo("ANOTHERBTC", "ANOTHER", "BTC", null, "dummy")
+            PairDetailInfo("NEWUSDT", "NEW", "USDT", "100.0", lastUpdated = "dummy"),
+            PairDetailInfo("ANOTHERBTC", "ANOTHER", "BTC", null, lastUpdated="dummy")
         )
 
         repository.saveAll(newPairs)
 
         transaction {
             val allPairs = TradingPairsTable.selectAll().map { row ->
-                PairInfo(
+                PairDetailInfo(
                     pair = row[TradingPairsTable.pair],
                     baseAsset = row[TradingPairsTable.baseAsset],
                     quoteAsset = row[TradingPairsTable.quoteAsset],
@@ -266,8 +278,8 @@ class TradingPairsRepositoryTest {
         }
 
         val updatedPairs = listOf(
-            PairInfo("BTCUSDT", "BTC", "USDT", "41000.75", "dummy"),
-            PairInfo("ETHBTC", "ETH", "BTC", null, "dummy")
+            PairDetailInfo("BTCUSDT", "BTC", "USDT", "41000.75", lastUpdated="dummy"),
+            PairDetailInfo("ETHBTC", "ETH", "BTC", null, lastUpdated="dummy")
         )
 
         Thread.sleep(50)
@@ -276,7 +288,7 @@ class TradingPairsRepositoryTest {
 
         transaction {
             val allPairs = TradingPairsTable.selectAll().map { row ->
-                PairInfo(
+                PairDetailInfo(
                     pair = row[TradingPairsTable.pair],
                     baseAsset = row[TradingPairsTable.baseAsset],
                     quoteAsset = row[TradingPairsTable.quoteAsset],
@@ -317,8 +329,8 @@ class TradingPairsRepositoryTest {
         }
 
         val mixedPairs = listOf(
-            PairInfo("BTCUSDT", "BTC", "USDT", "42000.0", "dummy"),
-            PairInfo("NEWMIXUSDT", "NEWM", "USDT", "50.0", "dummy")
+            PairDetailInfo("BTCUSDT", "BTC", "USDT", "42000.0", lastUpdated="dummy"),
+            PairDetailInfo("NEWMIXUSDT", "NEWM", "USDT", "50.0", lastUpdated="dummy")
         )
 
         Thread.sleep(50)
@@ -327,7 +339,7 @@ class TradingPairsRepositoryTest {
 
         transaction {
             val allPairs = TradingPairsTable.selectAll().map { row ->
-                PairInfo(
+                PairDetailInfo(
                     pair = row[TradingPairsTable.pair],
                     baseAsset = row[TradingPairsTable.baseAsset],
                     quoteAsset = row[TradingPairsTable.quoteAsset],
@@ -363,5 +375,30 @@ class TradingPairsRepositoryTest {
             val allPairsAfter = TradingPairsTable.selectAll().count()
             assertEquals(initialCount, allPairsAfter, "Number of pairs should not change after saving empty list")
         }
+    }
+
+    @Test
+    fun `findByName should return empty list for non-existent pair`() {
+        val pairName = "NONEXISTENTPAIR"
+        val result = repository.findByName(pairName)
+
+        assertTrue(result.isEmpty())
+        assertEquals(0, result.size)
+    }
+
+    @Test
+    fun `findByName should correctly format all BigDecimal fields`() {
+        val pairName = "XRPBTC"
+        val result = repository.findByName(pairName)
+
+        assertEquals(1, result.size)
+        val pairDetail = result.first()
+
+        assertEquals("XRPBTC", pairDetail.pair)
+        assertEquals("0.000015", pairDetail.price)
+        assertEquals("0.000016", pairDetail.highPrice)
+        assertEquals("0.0000145", pairDetail.lowPrice)
+        assertEquals("100000000", pairDetail.volume)
+        assertEquals("1500", pairDetail.quoteVolume)
     }
 }
