@@ -128,7 +128,7 @@ class TradingPairsRepositoryTest {
 
         val resultBtc = repository.findByQuery("btc")
 
-        assertEquals(4, resultBtc.size, "Should find 4 pairs containing 'btc'")
+        assertEquals(5, resultBtc.size, "Should find 8 pairs containing 'btc'")
         assertTrue(resultBtc.any { it.pair == "BTCUSDT" }, "BTCUSDT should be in results for 'btc'")
         assertTrue(resultBtc.any { it.pair == "ETHBTC" }, "ETHBTC should be in results for 'btc'")
         assertTrue(resultBtc.any { it.pair == "LTCBTC" }, "LTCBTC should be in results for 'btc'")
@@ -164,7 +164,7 @@ class TradingPairsRepositoryTest {
         val query = ""
         val result = repository.findByQuery(query)
 
-        assertEquals(7, result.size, "Result list size should match total number of pairs")
+        assertEquals(8, result.size, "Result list size should match total number of pairs")
         assertTrue(result.any { it.pair == "BTCUSDT" }, "BTCUSDT should be present")
         assertTrue(result.any { it.pair == "DOGEUSDT" }, "DOGEUSDT should be present")
         assertTrue(result.any { it.pair == "ETHBTC" }, "ETHBTC should be present")
@@ -179,7 +179,7 @@ class TradingPairsRepositoryTest {
     fun `findAll should return all pairs`() {
         val result = repository.findAll()
 
-        assertEquals(7, result.size, "findAll should return all 7 pairs")
+        assertEquals(8, result.size, "findAll should return all 8 pairs")
         assertTrue(result.any { it.pair == "BTCUSDT" }, "BTCUSDT should be present in findAll result")
         assertTrue(result.any { it.pair == "DOGEUSDT" }, "DOGEUSDT should be present in findAll result")
         assertTrue(result.any { it.pair == "ETHBTC" }, "ETHBTC should be present in findAll result")
@@ -297,7 +297,7 @@ class TradingPairsRepositoryTest {
                 )
             }
 
-            assertEquals(7, allPairs.size, "Total number of pairs should not change when only updating")
+            assertEquals(8, allPairs.size, "Total number of pairs should not change when only updating")
 
             val btcUsdt = allPairs.first { it.pair == "BTCUSDT" }
             assertEquals("BTC", btcUsdt.baseAsset, "Base asset should not change on update")
@@ -348,7 +348,7 @@ class TradingPairsRepositoryTest {
                 )
             }
 
-            assertEquals(8, allPairs.size, "Total number of pairs should be 7 (initial) + 1 (new)")
+            assertEquals(9, allPairs.size, "Total number of pairs should be 8 (initial) + 1 (new)")
 
             val btcUsdt = allPairs.first { it.pair == "BTCUSDT" }
             assertEquals("42000.00000000", btcUsdt.price, "Price should be updated for BTCUSDT")
@@ -367,7 +367,7 @@ class TradingPairsRepositoryTest {
     @Test
     fun `saveAll should handle empty list`() {
         val initialCount = transaction { TradingPairsTable.selectAll().count() }
-        assertEquals(7, initialCount, "Initial number of pairs should be 7")
+        assertEquals(8, initialCount, "Initial number of pairs should be 8")
 
         repository.saveAll(emptyList())
 
