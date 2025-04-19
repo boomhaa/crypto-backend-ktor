@@ -29,14 +29,6 @@ fun Route.pairsRoutes(pairService: PairServices) {
                 return@get
             }
             try {
-                if (query.contains("%") && !isValidPercentEncoding(query)) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        "Invalid URL encoding in query parameter"
-                    )
-                    return@get
-                }
-
                 val decoded = URLDecoder.decode(query, Charsets.UTF_8.toString())
                 val result = pairService.searchPairs(decoded)
                 call.respond(HttpStatusCode.OK, result)
@@ -61,23 +53,3 @@ fun Route.pairsRoutes(pairService: PairServices) {
     }
 }
 
-private fun isValidPercentEncoding(s: String): Boolean {
-    var i = 0
-    while (i < s.length) {
-        if (s[i] == '%') {
-            if (i + 2 >= s.length) {
-                return false
-            }
-
-            try {
-                s.substring(i + 1, i + 3).toInt(16)
-            } catch (e: NumberFormatException) {
-                return false
-            }
-            i += 3
-        } else {
-            i++
-        }
-    }
-    return true
-}

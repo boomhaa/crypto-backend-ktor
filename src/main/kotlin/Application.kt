@@ -5,6 +5,7 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.response.respond
 import kotlinx.serialization.json.Json
 
@@ -19,18 +20,18 @@ fun Application.module() {
             call.respond(status, mapOf("error" to "Page not found"))
         }
 
+        exception<BadRequestException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf("error" to "Malformed request: ${cause.message}")
+            )
+        }
+
         exception<IllegalArgumentException> { call, cause ->
-            if (cause.message?.contains("Invalid hex byte") == true) {
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("error" to "Invalid URL encoding in request")
-                )
-            } else {
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    mapOf("error" to "Internal server error")
-                )
-            }
+            call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf("error" to "Invalid input: ${cause.message}")
+            )
         }
 
         exception<Throwable> { call, cause ->
