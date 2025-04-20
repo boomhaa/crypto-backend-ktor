@@ -24,11 +24,11 @@ class TradingPairsRepository {
         try {
             pairs.forEach { pairDetailInfo ->
                 val exists =
-                    TradingPairsTable.select { TradingPairsTable.pair eq pairDetailInfo.pair }
+                    TradingPairsTable.select { TradingPairsTable.pair eq pairDetailInfo.pair.lowercase() }
                         .limit(1)
                         .count() > 0
                 if (exists){
-                    TradingPairsTable.update({TradingPairsTable.pair eq pairDetailInfo.pair}){
+                    TradingPairsTable.update({TradingPairsTable.pair eq pairDetailInfo.pair.lowercase()}){
                         it[price] = pairDetailInfo.price?.toBigDecimal()
                         it[highPrice24h] = pairDetailInfo.highPrice?.toBigDecimal()
                         it[lowPrice24h] = pairDetailInfo.lowPrice?.toBigDecimal()
@@ -39,7 +39,7 @@ class TradingPairsRepository {
                     }
                 }else{
                     TradingPairsTable.insert {
-                        it[pair] = pairDetailInfo.pair
+                        it[pair] = pairDetailInfo.pair.lowercase()
                         it[baseAsset] = pairDetailInfo.baseAsset
                         it[quoteAsset] = pairDetailInfo.quoteAsset
                         it[price] = pairDetailInfo.price?.toBigDecimal()
@@ -68,7 +68,7 @@ class TradingPairsRepository {
             }
 
             PairInfo(
-                pair = row[TradingPairsTable.pair],
+                pair = row[TradingPairsTable.pair].uppercase(),
                 baseAsset = row[TradingPairsTable.baseAsset],
                 quoteAsset = row[TradingPairsTable.quoteAsset],
                 price = price,
@@ -88,7 +88,7 @@ class TradingPairsRepository {
                 null
             }
             PairInfo(
-                pair = row[TradingPairsTable.pair],
+                pair = row[TradingPairsTable.pair].uppercase(),
                 baseAsset = row[TradingPairsTable.baseAsset],
                 quoteAsset = row[TradingPairsTable.quoteAsset],
                 price = price,
@@ -101,7 +101,7 @@ class TradingPairsRepository {
         addLogger(StdOutSqlLogger)
         val loweredQuery = "%${query.lowercase()}%"
         TradingPairsTable
-            .select { TradingPairsTable.pair.lowerCase() like loweredQuery }
+            .select { TradingPairsTable.pair like loweredQuery }
             .map { row ->
                 val price = try {
                     row[TradingPairsTable.price]?.toFormattedString()
@@ -110,7 +110,7 @@ class TradingPairsRepository {
                     null
                 }
                 PairInfo(
-                    pair = row[TradingPairsTable.pair],
+                    pair = row[TradingPairsTable.pair].uppercase(),
                     baseAsset = row[TradingPairsTable.baseAsset],
                     quoteAsset = row[TradingPairsTable.quoteAsset],
                     price = price,
@@ -121,7 +121,7 @@ class TradingPairsRepository {
 
     fun findByName(pair: String): List<PairDetailInfo> = transaction{
         val loweredPair = pair.lowercase()
-        TradingPairsTable.select { TradingPairsTable.pair.lowerCase() eq loweredPair }
+        TradingPairsTable.select { TradingPairsTable.pair eq loweredPair }
             .map {
                     row ->
                 val price = try {
@@ -155,7 +155,7 @@ class TradingPairsRepository {
                     null
                 }
                 PairDetailInfo(
-                    pair = row[TradingPairsTable.pair],
+                    pair = row[TradingPairsTable.pair].uppercase(),
                     baseAsset = row[TradingPairsTable.baseAsset],
                     quoteAsset = row[TradingPairsTable.quoteAsset],
                     price = price,
