@@ -3,6 +3,7 @@ package com.example
 
 import com.example.db.repositories.TradingPairsRepository
 import com.example.db.tables.TradingPairsTable
+import com.example.dto.PairDetailInfo
 import com.example.dto.PairInfo
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -39,52 +40,63 @@ class TradingPairsRepositoryTest {
             SchemaUtils.create(TradingPairsTable)
 
             TradingPairsTable.insert {
-                it[pair] = "BTCUSDT"
+                it[pair] = "BTCUSDT".lowercase()
                 it[baseAsset] = "BTC"
                 it[quoteAsset] = "USDT"
                 it[price] = BigDecimal("40000.50")
                 it[lastUpdated] = Instant.now().minusSeconds(600)
             }
             TradingPairsTable.insert {
-                it[pair] = "DOGEUSDT"
+                it[pair] = "DOGEUSDT".lowercase()
                 it[baseAsset] = "DOGE"
                 it[quoteAsset] = "USDT"
                 it[price] = BigDecimal("0.15")
                 it[lastUpdated] = Instant.now().minusSeconds(300)
             }
             TradingPairsTable.insert {
-                it[pair] = "ETHBTC"
+                it[pair] = "ETHBTC".lowercase()
                 it[baseAsset] = "ETH"
                 it[quoteAsset] = "BTC"
                 it[price] = BigDecimal("0.05")
                 it[lastUpdated] = Instant.now().minusSeconds(3600)
             }
             TradingPairsTable.insert {
-                it[pair] = "LTCBTC"
+                it[pair] = "LTCBTC".lowercase()
                 it[baseAsset] = "LTC"
                 it[quoteAsset] = "BTC"
                 it[price] = BigDecimal("0.005")
                 it[lastUpdated] = Instant.now().minusSeconds(7200)
             }
             TradingPairsTable.insert {
-                it[pair] = "XRPETH"
+                it[pair] = "XRPETH".lowercase()
                 it[baseAsset] = "XRP"
                 it[quoteAsset] = "ETH"
                 it[price] = BigDecimal("0.0002")
                 it[lastUpdated] = Instant.now().minusSeconds(10800)
             }
             TradingPairsTable.insert {
-                it[pair] = "NOUSDTPRICE"
+                it[pair] = "NOUSDTPRICE".lowercase()
                 it[baseAsset] = "NO"
                 it[quoteAsset] = "USDT"
                 it[lastUpdated] = Instant.now().minusSeconds(86400)
             }
             TradingPairsTable.insert {
-                it[pair] = "CASETESTbtc"
+                it[pair] = "CASETESTBTC".lowercase()
                 it[baseAsset] = "CT"
                 it[quoteAsset] = "BTC"
                 it[price] = BigDecimal("1.0")
                 it[lastUpdated] = Instant.now().minusSeconds(14400)
+            }
+            TradingPairsTable.insert {
+                it[pair] = "XRPBTC".lowercase()
+                it[baseAsset] = "XRP"
+                it[quoteAsset] = "BTC"
+                it[price] = BigDecimal("0.0000150000")
+                it[highPrice24h] = BigDecimal("0.000016")
+                it[lowPrice24h] = BigDecimal("0.0000145")
+                it[volumeBaseAsset] = BigDecimal("100000000")
+                it[volumeQuoteAsset] = BigDecimal("1500")
+                it[lastUpdated] = Instant.now().minusSeconds(2131)
             }
         }
     }
@@ -116,11 +128,11 @@ class TradingPairsRepositoryTest {
 
         val resultBtc = repository.findByQuery("btc")
 
-        assertEquals(4, resultBtc.size, "Should find 4 pairs containing 'btc'")
+        assertEquals(5, resultBtc.size, "Should find 8 pairs containing 'btc'")
         assertTrue(resultBtc.any { it.pair == "BTCUSDT" }, "BTCUSDT should be in results for 'btc'")
         assertTrue(resultBtc.any { it.pair == "ETHBTC" }, "ETHBTC should be in results for 'btc'")
         assertTrue(resultBtc.any { it.pair == "LTCBTC" }, "LTCBTC should be in results for 'btc'")
-        assertTrue(resultBtc.any { it.pair == "CASETESTbtc" }, "CASETESTbtc should be in results for 'btc'")
+        assertTrue(resultBtc.any { it.pair == "CASETESTBTC" }, "CASETESTbtc should be in results for 'btc'")
         assertFalse(resultBtc.any { it.pair == "XRPETH" }, "XRPETH should not be in results for 'btc'")
 
         val resultOge = repository.findByQuery("oge")
@@ -136,7 +148,7 @@ class TradingPairsRepositoryTest {
 
         val btcUsdt = resultUsdt.first { it.pair == "BTCUSDT" }
 
-        assertEquals("40000.50000000", btcUsdt.price, "Price should match for BTCUSDT")
+        assertEquals("40000.5", btcUsdt.price, "Price should match for BTCUSDT")
         assertTrue(btcUsdt.lastUpdated != null, "lastUpdated should not be null for BTCUSDT")
     }
 
@@ -152,14 +164,14 @@ class TradingPairsRepositoryTest {
         val query = ""
         val result = repository.findByQuery(query)
 
-        assertEquals(7, result.size, "Result list size should match total number of pairs")
+        assertEquals(8, result.size, "Result list size should match total number of pairs")
         assertTrue(result.any { it.pair == "BTCUSDT" }, "BTCUSDT should be present")
         assertTrue(result.any { it.pair == "DOGEUSDT" }, "DOGEUSDT should be present")
         assertTrue(result.any { it.pair == "ETHBTC" }, "ETHBTC should be present")
         assertTrue(result.any { it.pair == "LTCBTC" }, "LTCBTC should be present")
         assertTrue(result.any { it.pair == "XRPETH" }, "XRPETH should be present")
         assertTrue(result.any { it.pair == "NOUSDTPRICE" }, "NOUSDTPRICE should be present")
-        assertTrue(result.any { it.pair == "CASETESTbtc" }, "CASETESTbtc should be present")
+        assertTrue(result.any { it.pair == "CASETESTBTC" }, "CASETESTbtc should be present")
     }
 
 
@@ -167,20 +179,20 @@ class TradingPairsRepositoryTest {
     fun `findAll should return all pairs`() {
         val result = repository.findAll()
 
-        assertEquals(7, result.size, "findAll should return all 7 pairs")
+        assertEquals(8, result.size, "findAll should return all 8 pairs")
         assertTrue(result.any { it.pair == "BTCUSDT" }, "BTCUSDT should be present in findAll result")
         assertTrue(result.any { it.pair == "DOGEUSDT" }, "DOGEUSDT should be present in findAll result")
         assertTrue(result.any { it.pair == "ETHBTC" }, "ETHBTC should be present in findAll result")
         assertTrue(result.any { it.pair == "LTCBTC" }, "LTCBTC should be present in findAll result")
         assertTrue(result.any { it.pair == "XRPETH" }, "XRPETH should be present in findAll result")
         assertTrue(result.any { it.pair == "NOUSDTPRICE" }, "NOUSDTPRICE should be present in findAll result")
-        assertTrue(result.any { it.pair == "CASETESTbtc" }, "CASETESTbtc should be present in findAll result")
+        assertTrue(result.any { it.pair == "CASETESTBTC" }, "CASETESTbtc should be present in findAll result")
 
         val btcUsdt = result.first { it.pair == "BTCUSDT" }
 
         assertEquals("BTC", btcUsdt.baseAsset, "Base asset should match for BTCUSDT")
         assertEquals("USDT", btcUsdt.quoteAsset, "Quote asset should match for BTCUSDT")
-        assertEquals("40000.50000000", btcUsdt.price, "Price should match for BTCUSDT")
+        assertEquals("40000.5", btcUsdt.price, "Price should match for BTCUSDT")
         assertTrue(btcUsdt.lastUpdated != null, "lastUpdated should not be null for BTCUSDT")
 
         val noUsdtPrice = result.first { it.pair == "NOUSDTPRICE" }
@@ -199,15 +211,15 @@ class TradingPairsRepositoryTest {
         assertFalse(result.any { it.pair == "LTCBTC" }, "LTCBTC should not be popular")
         assertFalse(result.any { it.pair == "XRPETH" }, "XRPETH should not be popular")
         assertFalse(result.any { it.pair == "NOUSDTPRICE" }, "NOUSDTPRICE should not be popular")
-        assertFalse(result.any { it.pair == "CASETESTbtc" }, "CASETESTbtc should not be popular")
+        assertFalse(result.any { it.pair == "CASETESTBTC" }, "CASETESTbtc should not be popular")
 
         val btcUsdt = result.first { it.pair == "BTCUSDT" }
 
-        assertEquals("40000.50000000", btcUsdt.price, "Price should match for popular BTCUSDT")
+        assertEquals("40000.5", btcUsdt.price, "Price should match for popular BTCUSDT")
 
         val ethBtc = result.first { it.pair == "DOGEUSDT" }
 
-        assertEquals("0.15000000", ethBtc.price, "Price should match for popular ETHBTC")
+        assertEquals("0.15", ethBtc.price, "Price should match for popular ETHBTC")
     }
 
     @Test
@@ -217,7 +229,7 @@ class TradingPairsRepositoryTest {
 
         transaction {
             TradingPairsTable.insert {
-                it[pair] = "NOTPOPULARUSDT"
+                it[pair] = "NOTPOPULARUSDT".lowercase()
                 it[baseAsset] = "NP"
                 it[quoteAsset] = "USDT"
                 it[price] = BigDecimal("1.0")
@@ -235,16 +247,16 @@ class TradingPairsRepositoryTest {
         transaction { SchemaUtils.drop(TradingPairsTable); SchemaUtils.create(TradingPairsTable) }
 
         val newPairs = listOf(
-            PairInfo("NEWUSDT", "NEW", "USDT", "100.0", "dummy"),
-            PairInfo("ANOTHERBTC", "ANOTHER", "BTC", null, "dummy")
+            PairDetailInfo("NEWUSDT", "NEW", "USDT", "100.0", lastUpdated = "dummy"),
+            PairDetailInfo("ANOTHERBTC", "ANOTHER", "BTC", null, lastUpdated="dummy")
         )
 
         repository.saveAll(newPairs)
 
         transaction {
             val allPairs = TradingPairsTable.selectAll().map { row ->
-                PairInfo(
-                    pair = row[TradingPairsTable.pair],
+                PairDetailInfo(
+                    pair = row[TradingPairsTable.pair].uppercase(),
                     baseAsset = row[TradingPairsTable.baseAsset],
                     quoteAsset = row[TradingPairsTable.quoteAsset],
                     price = row[TradingPairsTable.price]?.toPlainString(),
@@ -262,12 +274,12 @@ class TradingPairsRepositoryTest {
     @Test
     fun `saveAll should update existing pairs`() {
         val initialBtcUsdtLastUpdated = transaction {
-            TradingPairsTable.select { TradingPairsTable.pair eq "BTCUSDT" }.single()[TradingPairsTable.lastUpdated]
+            TradingPairsTable.select { TradingPairsTable.pair eq "BTCUSDT".lowercase() }.single()[TradingPairsTable.lastUpdated]
         }
 
         val updatedPairs = listOf(
-            PairInfo("BTCUSDT", "BTC", "USDT", "41000.75", "dummy"),
-            PairInfo("ETHBTC", "ETH", "BTC", null, "dummy")
+            PairDetailInfo("BTCUSDT", "BTC", "USDT", "41000.75", lastUpdated="dummy"),
+            PairDetailInfo("ETHBTC", "ETH", "BTC", null, lastUpdated="dummy")
         )
 
         Thread.sleep(50)
@@ -276,8 +288,8 @@ class TradingPairsRepositoryTest {
 
         transaction {
             val allPairs = TradingPairsTable.selectAll().map { row ->
-                PairInfo(
-                    pair = row[TradingPairsTable.pair],
+                PairDetailInfo(
+                    pair = row[TradingPairsTable.pair].uppercase(),
                     baseAsset = row[TradingPairsTable.baseAsset],
                     quoteAsset = row[TradingPairsTable.quoteAsset],
                     price = row[TradingPairsTable.price]?.toPlainString(),
@@ -285,13 +297,13 @@ class TradingPairsRepositoryTest {
                 )
             }
 
-            assertEquals(7, allPairs.size, "Total number of pairs should not change when only updating")
+            assertEquals(8, allPairs.size, "Total number of pairs should not change when only updating")
 
             val btcUsdt = allPairs.first { it.pair == "BTCUSDT" }
             assertEquals("BTC", btcUsdt.baseAsset, "Base asset should not change on update")
             assertEquals("USDT", btcUsdt.quoteAsset, "Quote asset should not change on update")
             assertEquals("41000.75000000", btcUsdt.price, "Price should be updated for BTCUSDT")
-            val updatedBtcUsdtLastUpdated = transaction { TradingPairsTable.select { TradingPairsTable.pair eq "BTCUSDT" }.single()[TradingPairsTable.lastUpdated] }
+            val updatedBtcUsdtLastUpdated = transaction { TradingPairsTable.select { TradingPairsTable.pair eq "BTCUSDT".lowercase() }.single()[TradingPairsTable.lastUpdated] }
             assertTrue(updatedBtcUsdtLastUpdated > initialBtcUsdtLastUpdated, "Last updated should be updated and be later for BTCUSDT")
 
             val ethBtc = allPairs.first { it.pair == "ETHBTC" }
@@ -300,7 +312,7 @@ class TradingPairsRepositoryTest {
             assertEquals(null, ethBtc.price, "Price should be updated to null for ETHBTC")
             assertTrue(ethBtc.lastUpdated != null, "Last updated should be set for ETHBTC")
 
-            val dogeUsdtBeforeRow = transaction { TradingPairsTable.select { TradingPairsTable.pair eq "DOGEUSDT" }.single() }
+            val dogeUsdtBeforeRow = transaction { TradingPairsTable.select { TradingPairsTable.pair eq "DOGEUSDT".lowercase() }.single() }
             val dogeUsdtAfter = allPairs.first { it.pair == "DOGEUSDT" }
             assertEquals(dogeUsdtBeforeRow[TradingPairsTable.price]?.toPlainString(), dogeUsdtAfter.price, "Price should remain unchanged for non-updated pairs")
             assertEquals(dogeUsdtBeforeRow[TradingPairsTable.lastUpdated].toString(), dogeUsdtAfter.lastUpdated, "Last updated should not change for non-updated pairs")
@@ -310,15 +322,15 @@ class TradingPairsRepositoryTest {
     @Test
     fun `saveAll should handle mixed new and existing pairs`() {
         val initialBtcUsdtPrice = transaction {
-            TradingPairsTable.select { TradingPairsTable.pair eq "BTCUSDT" }.single()[TradingPairsTable.price]?.toPlainString()
+            TradingPairsTable.select { TradingPairsTable.pair eq "BTCUSDT".lowercase() }.single()[TradingPairsTable.price]?.toPlainString()
         }
         val initialBtcUsdtLastUpdated = transaction {
-            TradingPairsTable.select { TradingPairsTable.pair eq "BTCUSDT" }.single()[TradingPairsTable.lastUpdated]
+            TradingPairsTable.select { TradingPairsTable.pair eq "BTCUSDT".lowercase() }.single()[TradingPairsTable.lastUpdated]
         }
 
         val mixedPairs = listOf(
-            PairInfo("BTCUSDT", "BTC", "USDT", "42000.0", "dummy"),
-            PairInfo("NEWMIXUSDT", "NEWM", "USDT", "50.0", "dummy")
+            PairDetailInfo("BTCUSDT", "BTC", "USDT", "42000.0", lastUpdated="dummy"),
+            PairDetailInfo("NEWMIXUSDT", "NEWM", "USDT", "50.0", lastUpdated="dummy")
         )
 
         Thread.sleep(50)
@@ -327,8 +339,8 @@ class TradingPairsRepositoryTest {
 
         transaction {
             val allPairs = TradingPairsTable.selectAll().map { row ->
-                PairInfo(
-                    pair = row[TradingPairsTable.pair],
+                PairDetailInfo(
+                    pair = row[TradingPairsTable.pair].uppercase(),
                     baseAsset = row[TradingPairsTable.baseAsset],
                     quoteAsset = row[TradingPairsTable.quoteAsset],
                     price = row[TradingPairsTable.price]?.toPlainString(),
@@ -336,12 +348,12 @@ class TradingPairsRepositoryTest {
                 )
             }
 
-            assertEquals(8, allPairs.size, "Total number of pairs should be 7 (initial) + 1 (new)")
+            assertEquals(9, allPairs.size, "Total number of pairs should be 8 (initial) + 1 (new)")
 
             val btcUsdt = allPairs.first { it.pair == "BTCUSDT" }
             assertEquals("42000.00000000", btcUsdt.price, "Price should be updated for BTCUSDT")
             assertNotEquals(initialBtcUsdtPrice, btcUsdt.price, "BTCUSDT price should have been updated")
-            val btcUsdtLastUpdated = transaction { TradingPairsTable.select { TradingPairsTable.pair eq "BTCUSDT" }.single()[TradingPairsTable.lastUpdated] }
+            val btcUsdtLastUpdated = transaction { TradingPairsTable.select { TradingPairsTable.pair eq "BTCUSDT".lowercase() }.single()[TradingPairsTable.lastUpdated] }
             assertTrue(btcUsdtLastUpdated > initialBtcUsdtLastUpdated, "BTCUSDT last updated time should have changed")
 
             assertTrue(allPairs.any { it.pair == "NEWMIXUSDT" && it.baseAsset == "NEWM" && it.quoteAsset == "USDT" && it.price == "50.00000000" }, "NEWMIXUSDT should be inserted")
@@ -355,7 +367,7 @@ class TradingPairsRepositoryTest {
     @Test
     fun `saveAll should handle empty list`() {
         val initialCount = transaction { TradingPairsTable.selectAll().count() }
-        assertEquals(7, initialCount, "Initial number of pairs should be 7")
+        assertEquals(8, initialCount, "Initial number of pairs should be 8")
 
         repository.saveAll(emptyList())
 
@@ -363,5 +375,30 @@ class TradingPairsRepositoryTest {
             val allPairsAfter = TradingPairsTable.selectAll().count()
             assertEquals(initialCount, allPairsAfter, "Number of pairs should not change after saving empty list")
         }
+    }
+
+    @Test
+    fun `findByName should return empty list for non-existent pair`() {
+        val pairName = "NONEXISTENTPAIR"
+        val result = repository.findByName(pairName)
+
+        assertTrue(result.isEmpty())
+        assertEquals(0, result.size)
+    }
+
+    @Test
+    fun `findByName should correctly format all BigDecimal fields`() {
+        val pairName = "XRPBTC"
+        val result = repository.findByName(pairName)
+
+        assertEquals(1, result.size)
+        val pairDetail = result.first()
+
+        assertEquals("XRPBTC", pairDetail.pair)
+        assertEquals("0.000015", pairDetail.price)
+        assertEquals("0.000016", pairDetail.highPrice)
+        assertEquals("0.0000145", pairDetail.lowPrice)
+        assertEquals("100000000", pairDetail.volume)
+        assertEquals("1500", pairDetail.quoteVolume)
     }
 }
