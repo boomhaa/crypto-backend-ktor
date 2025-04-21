@@ -3,20 +3,23 @@ package com.example.exchanges.mexc
 import com.example.dto.MexcExchangeInfoResponse
 import com.example.dto.Pair24hPriceInfo
 import com.example.dto.PairDetailInfo
-import com.example.dto.PairInfo
+import com.example.dto.TradeInfo
 import io.github.cdimascio.dotenv.*
 import com.example.exchanges.configs.MexcConfig
 import com.example.services.HttpService
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
-class MexcClient(private val httpService: HttpService,
-                 dotenv: Dotenv = Dotenv.load()) {
+class MexcClient(
+    private val httpService: HttpService,
+    dotenv: Dotenv = Dotenv.load()
+) {
 
 
     private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
     private val MEXC_API_KEY: String =
-        dotenv["MEXC_API_KEY"] ?: throw IllegalStateException("MEXC_API_KEY is not set in .env file: line 14")
+        dotenv["MEXC_API_KEY"]
+            ?: throw IllegalStateException("MEXC_API_KEY is not set in .env file: line 14")
     //private val MEXC_SECRET_KEY: String =
     //    dotenv["MEXC_SECRET_KEY"] ?: throw IllegalStateException("MEXC_SECRET_KEY is not set in .env file")
 
@@ -67,7 +70,7 @@ class MexcClient(private val httpService: HttpService,
         }
     }
 
-    private fun getPairsLast24hPrice(): Map<String, List<String?>>{
+    private fun getPairsLast24hPrice(): Map<String, List<String?>> {
 
         val url = "${MexcConfig.BASE_URL}${MexcConfig.Endpoints.PRICE_LAST_24H}"
         val headers = mapOf("X-MEXC-APIKEY" to MEXC_API_KEY, "Content-Type" to "application/json")
@@ -77,7 +80,25 @@ class MexcClient(private val httpService: HttpService,
         val priceInfo24h: List<Pair24hPriceInfo> = Json.decodeFromString(response)
 
         return priceInfo24h.associate { item ->
-           item.symbol to listOf(item.highPrice, item.lowPrice, item.volume, item.quoteVolume)
+            item.symbol to listOf(item.highPrice, item.lowPrice, item.volume, item.quoteVolume)
         }
+    }
+
+    fun getPairLastTrades(pair: String, limit: String): List<TradeInfo> {
+
+        val url = "${MexcConfig.BASE_URL}${MexcConfig.Endpoints.LAST_TRADES}"
+        val headers = mapOf(
+            "X-MEXC-APIKEY" to MEXC_API_KEY,
+            "Content-Type" to "application/json",
+            "symbol" to pair,
+            "limit" to limit
+        )
+
+        val response = httpService.get(url, headers)
+
+        val lastTrades: List<TradeInfo> = Json.decodeFromString(response)
+
+        return lastTrades
+
     }
 }
