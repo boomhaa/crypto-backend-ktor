@@ -119,14 +119,14 @@ jobs:
 
       - name: 📂 Create remote directory
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "mkdir -p F:\\"
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "mkdir -p ~/my-ktor-project"
 
       - name: 📤 Copy files to server
         run: |
-          scp -i ~/.ssh/deploy_key app/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:F:\\my-ktor-project\\crypto-backend-ktor.jar
-          scp -i ~/.ssh/deploy_key .env ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:F:\\my-ktor-project\\.env
-          scp -i ~/.ssh/deploy_key docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:F:\\my-ktor-project\\docker-compose.yml
-          scp -i ~/.ssh/deploy_key Dockerfile ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:F:\\my-ktor-project\\Dockerfile
+          scp -i ~/.ssh/deploy_key app/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/crypto-backend-ktor.jar
+          scp -i ~/.ssh/deploy_key .env ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/.env
+          scp -i ~/.ssh/deploy_key docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/docker-compose.yml
+          scp -i ~/.ssh/deploy_key Dockerfile ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/my-ktor-project/Dockerfile
 
       - name: 🐳 Create Docker Volume
         run: |
