@@ -135,7 +135,7 @@ jobs:
       - name: 🚀 SSH Deploy
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            cd F:\\my-ktor-project
+            cd ~/my-ktor-project
             echo "🛑 Останавливаем старые контейнеры"
             docker-compose down
             echo "🚀 Запускаем новые контейнеры"
