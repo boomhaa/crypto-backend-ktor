@@ -1,6 +1,7 @@
 package com.example.db.repositories
 
 import com.example.configs.ExchangeConstants
+import com.example.configs.ExchangeConstants.toFormattedString
 import com.example.db.tables.TradingPairsTable
 import com.example.dto.PairDetailInfo
 import com.example.dto.PairInfo
@@ -66,7 +67,7 @@ class TradingPairsRepository {
                 logger.error("findAll: Can't convert price to string: $e: ${e.message}")
                 null
             }
-
+            
             PairInfo(
                 pair = row[TradingPairsTable.pair].uppercase(),
                 baseAsset = row[TradingPairsTable.baseAsset],
@@ -168,14 +169,5 @@ class TradingPairsRepository {
             }
     }
 
-    private fun BigDecimal?.toFormattedString(): String? {
-        if (this == null) return null
 
-        val plainString = this.toPlainString()
-        return if (plainString.contains('.')) {
-            plainString.replace(Regex("0*$"), "").replace(Regex("\\.$"), "")
-        } else {
-            plainString
-        }
-    }
 }

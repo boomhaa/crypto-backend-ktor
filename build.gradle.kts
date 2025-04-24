@@ -33,6 +33,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.4")
     implementation("io.ktor:ktor-server-content-negotiation:2.3.4")
     implementation("io.ktor:ktor-server-status-pages-jvm:$ktorVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
 
     // Зависимости для работы с БД
     implementation("org.jetbrains.exposed:exposed-core:0.41.1")
@@ -75,4 +76,17 @@ tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
     manifest {
         attributes["Main-Class"] = "com.example.ApplicationKt"
     }
+}
+
+tasks.register<Copy>("copyJarToRoot") {
+    dependsOn("shadowJar")
+    doNotTrackState("Copying to project root may include unreadable or unmanaged files")
+    val jarFile = layout.buildDirectory.file("libs/crypto-backend-ktor.jar")
+
+    from(jarFile)
+    into(project.rootDir)
+}
+
+tasks.named("build") {
+    finalizedBy("copyJarToRoot")
 }
