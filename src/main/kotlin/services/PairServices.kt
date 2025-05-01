@@ -54,27 +54,18 @@ class PairServices(
     }
 
     fun startLastTradesRefreshJob() {
-        CoroutineScope(Dispatchers.IO).launch {
-            while (true) {
-                try {
-                    logger.info("Function for saving last trades from exchange is running")
-                    refreshLastTradesFromExchange()
-                    delay(saveInterval.toMillis())
-                } catch (e: Exception) {
-                    logger.error("Error while insert last trades: $e: ${e.message}: line 3")
-                }
-            }
-        }
-    }
-
-    private fun refreshLastTradesFromExchange() {
         ExchangeConstants.ALL_PAIRS.forEach { pair ->
-            try {
-                val lastTrades = mexcClient.getPairLastTrades(pair.key, "50")
-                pairLastTradeRepository.saveTrades(lastTrades, pair.value)
-
-            }catch (e: Exception){
-                logger.error(e.toString() + e.message + " line ")
+            CoroutineScope(Dispatchers.IO).launch {
+                while (true) {
+                    try {
+                        logger.info("Function for saving last trades from exchange is running")
+                        val lastTrades = mexcClient.getPairLastTrades(pair.key, "50")
+                        pairLastTradeRepository.saveTrades(lastTrades, pair.value)
+                        delay(saveInterval.toMillis())
+                    } catch (e: Exception) {
+                        logger.error("Error while insert last trades: $e: ${e.message}: line 3")
+                    }
+                }
             }
         }
     }
@@ -96,7 +87,7 @@ class PairServices(
     }
 
     fun getLastTrades(pair: String): List<PairTradeInfo>{
-        val pairId = ExchangeConstants.ALL_PAIRS[pair]!!
+        val pairId = ExchangeConstants.ALL_PAIRS[pair.lowercase()]!!
         logger.info("$pair $pairId")
         return pairLastTradeRepository.getLastTrades(pairId)
     }

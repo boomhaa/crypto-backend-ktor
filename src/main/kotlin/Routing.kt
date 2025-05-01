@@ -36,7 +36,7 @@ fun Application.configureRouting() {
     pairServices.startDataRefreshJob()
     Thread.sleep(500)
 
-    val specificPairs = listOf("btcusdt", "ethusdt", "dogeusdt")
+    val specificPairs = ExchangeConstants.POPULAR_PAIRS
 
     ExchangeConstants.ALL_PAIRS = transaction {
         TradingPairsTable

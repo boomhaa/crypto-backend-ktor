@@ -35,7 +35,7 @@ class PairLastTradeRepository {
                     it[price] = trade.price.toBigDecimal()
                     it[quantity] = trade.qty.toBigDecimal()
                     it[timestamp] = Instant.ofEpochMilli(trade.time)
-                        .atZone(ZoneId.systemDefault())
+                        .atZone(ZoneId.of("UTC"))
                         .toLocalDateTime()
                 }
             }
