@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.ZoneId
 import kotlinx.datetime.toKotlinLocalDateTime
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.notInSubQuery
 
 class PairLastTradeRepository {
     private val logger = LoggerFactory.getLogger(TradingPairsRepository::class.java)
@@ -44,24 +45,21 @@ class PairLastTradeRepository {
     }
 
     private fun deletePrevious(id: Int, direction: String) = transaction {
-        val idToKeep = PairLastTrades.slice(PairLastTrades.id)
-            .select {
-                (PairLastTrades.tradingPairId eq id) and
-                        (PairLastTrades.direction eq direction)
-            }
-            .orderBy(PairLastTrades.timestamp, SortOrder.DESC)
-            .limit(50)
-            .map { it[PairLastTrades.id] }
-
         PairLastTrades.deleteWhere {
             (tradingPairId eq id) and
                     (PairLastTrades.direction eq direction) and
-                    (PairLastTrades.id notInList idToKeep)
+                    (PairLastTrades.id notInSubQuery PairLastTrades.slice(PairLastTrades.id)
+                        .select {
+                            (tradingPairId eq id) and
+                                    (PairLastTrades.direction eq direction)
+                        }
+                        .orderBy(timestamp, SortOrder.DESC)
+                        .limit(50))
         }
 
     }
 
-    fun getLastTrades(id: Int): List<PairTradeInfo> = transaction{
+    fun getLastTrades(id: Int): List<PairTradeInfo> = transaction {
         PairLastTrades.select {
             (PairLastTrades.tradingPairId eq id)
         }
