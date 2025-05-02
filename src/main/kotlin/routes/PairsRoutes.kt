@@ -42,13 +42,24 @@ fun Route.pairsRoutes(pairService: PairServices) {
             }
         }
 
-        get("{pair}") {
-            val pair = call.parameters["pair"] ?: return@get call.respond(
-                HttpStatusCode.BadRequest,
-                mapOf("error" to "Parameter is required")
-            )
-            val result = pairService.getPairDetailInfo(pair)
-            call.respond(HttpStatusCode.OK, result)
+        route("{pair}") {
+            get {
+                val pair = call.parameters["pair"] ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Parameter is required")
+                )
+                val result = pairService.getPairDetailInfo(pair)
+                call.respond(HttpStatusCode.OK, result)
+            }
+            get("/trades") {
+                val pair = call.parameters["pair"] ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Parameter is required")
+                )
+                val result = pairService.getLastTrades(pair)
+                call.respond(HttpStatusCode.OK, result)
+            }
+
         }
     }
 }

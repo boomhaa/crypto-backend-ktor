@@ -19,7 +19,7 @@ class HttpService {
         }
         val request = requestBuilder.build()
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        logger.info("Got response: $response")
+
         return response.body()
     }
 

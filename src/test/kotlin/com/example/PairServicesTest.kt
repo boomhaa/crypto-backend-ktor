@@ -1,5 +1,6 @@
 package com.example
 
+import com.example.db.repositories.PairLastTradeRepository
 import com.example.db.repositories.TradingPairsRepository
 import com.example.dto.PairInfo
 import com.example.exchanges.mexc.MexcClient
@@ -14,12 +15,14 @@ class PairServicesTest {
     private lateinit var mexcClient: MexcClient
     private lateinit var pairServices: PairServices
     private lateinit var tradingPairsRepository: TradingPairsRepository
+    private lateinit var pairLastTradeRepository: PairLastTradeRepository
 
     @BeforeEach
     fun setup() {
         mexcClient = mock()
         tradingPairsRepository = mock()
-        pairServices = PairServices(mexcClient, tradingPairsRepository)
+        pairLastTradeRepository = mock()
+        pairServices = PairServices(mexcClient, tradingPairsRepository, pairLastTradeRepository)
     }
 
     @Test

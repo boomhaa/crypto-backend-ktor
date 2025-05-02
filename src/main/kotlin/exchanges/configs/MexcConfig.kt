@@ -10,11 +10,12 @@ object MexcConfig {
         const val KLINE = "/api/v3/klines"
         const val PRICE = "/api/v3/ticker/price"
         const val PRICE_LAST_24H = "/api/v3/ticker/24hr"
+        const val LAST_TRADES = "/api/v3/trades"
     }
 
     object Intervals {
         const val MIN15 = "15m"
-        const val HOUR1 = "1h"
+        const val HOUR1 = "60m"
         const val HOUR4 = "4h"
         const val DAY1 = "1d"
         const val WEEK1 = "1w"
