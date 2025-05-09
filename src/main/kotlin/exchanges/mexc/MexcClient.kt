@@ -86,7 +86,8 @@ class MexcClient(
 
     fun getPairLastTrades(pair: String, limit: String): List<TradeInfo> {
 
-        val url = "${MexcConfig.BASE_URL}${MexcConfig.Endpoints.LAST_TRADES}?symbol=${pair.uppercase()}&limit=$limit"
+        val url =
+            "${MexcConfig.BASE_URL}${MexcConfig.Endpoints.LAST_TRADES}?symbol=${pair.uppercase()}&limit=$limit"
 
         val headers = mapOf(
             "X-MEXC-APIKEY" to MEXC_API_KEY,
@@ -97,6 +98,21 @@ class MexcClient(
         val lastTrades: List<TradeInfo> = Json.decodeFromString(response)
 
         return lastTrades
+    }
+
+    fun getPairLastKlines(pair: String, limit: String, interval: String) {
+
+        val url =
+            "${MexcConfig.BASE_URL}${MexcConfig.Endpoints.KLINE}?symbol=${pair.uppercase()}&interval=$interval&limit=$limit"
+
+        val headers = mapOf(
+            "X-MEXC-APIKEY" to MEXC_API_KEY,
+            "Content-Type" to "application/json",
+        )
+
+        val response = httpService.get(url, headers)
+
 
     }
+
 }
